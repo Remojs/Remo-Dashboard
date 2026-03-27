@@ -8,6 +8,9 @@ const errorMiddleware = require('./middlewares/errorMiddleware');
 
 const app = express();
 
+// ── Trust reverse proxy (Easypanel / Nginx) ────────────────────────────────
+app.set('trust proxy', 1);
+
 // ── Security headers ───────────────────────────────────────────────────────
 app.use(helmet());
 
