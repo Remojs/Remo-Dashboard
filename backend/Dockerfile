@@ -21,7 +21,8 @@ RUN npx prisma generate
 
 # ── Entrypoint ──
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Fix Windows CRLF line endings and ensure executable
+RUN sed -i 's/\r//' /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 4000
 

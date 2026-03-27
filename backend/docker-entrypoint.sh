@@ -25,4 +25,4 @@ p.user.count().then(n => {
 "
 
 echo "🚀 Iniciando backend..."
-exec "\$@"
+exec "$@"
