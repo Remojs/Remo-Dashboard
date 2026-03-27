@@ -69,7 +69,6 @@ async function main() {
         isRead: true,
       },
     ],
-    skipDuplicates: true,
   });
   console.log('✅  Emails seeded');
 
@@ -80,7 +79,6 @@ async function main() {
       { clientName: 'MegaStore', type: 'ecommerce', price: 4500, status: 'in_progress' },
       { clientName: 'BotFlow Inc', type: 'bot', price: 2200, status: 'pending' },
     ],
-    skipDuplicates: true,
   });
   console.log('✅  Projects seeded');
 
@@ -109,7 +107,6 @@ async function main() {
         priority: 'low',
       },
     ],
-    skipDuplicates: true,
   });
   console.log('✅  Tasks seeded');
 
@@ -120,7 +117,6 @@ async function main() {
       { description: 'Figma Pro subscription', amount: 45.0, category: 'tools' },
       { description: 'Client lunch meeting', amount: 78.5, category: 'business' },
     ],
-    skipDuplicates: true,
   });
   console.log('✅  Expenses seeded');
 
