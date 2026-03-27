@@ -1,0 +1,46 @@
+# ─── Interaktive Admin Dashboard — Docker Compose ─────────────────────────────
+# Stack: Express backend + Next.js frontend + SQLite (sin servicio de DB separado)
+#
+# Usage:
+#   1. cp .env.example .env  y completá los valores
+#   2. docker compose up --build -d
+
+services:
+
+  # ── Backend (Express + Prisma + SQLite) ──────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # SQLite persiste en el volumen montado en /app/data
+      DATABASE_URL: file:/app/data/database.db
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+    volumes:
+      - sqlite_data:/app/data
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+
+  # ── Frontend (Next.js standalone) ────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+
+volumes:
+  sqlite_data:

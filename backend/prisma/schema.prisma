@@ -1,0 +1,141 @@
+// Prisma Schema - Interaktive Admin Dashboard
+// Generator and datasource
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────────
+model User {
+  id         String    @id @default(uuid())
+  name       String
+  email      String    @unique
+  password   String
+  role       String    @default("user")      // "admin" | "user"
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  emails       Email[]
+  tasks        Task[]    @relation("AssignedTasks")
+  createdTasks Task[]    @relation("CreatedTasks")
+  passwords    Password[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// EMAILS (internal storage)
+// ─────────────────────────────────────────────
+model Email {
+  id        String    @id @default(uuid())
+  userId    String?   @map("user_id")
+  type      String    @default("personal")  // "personal" | "shared"
+  from      String
+  subject   String
+  body      String
+  isRead    Boolean   @default(false) @map("is_read")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("emails")
+}
+
+// ─────────────────────────────────────────────
+// PASSWORD MANAGER
+// ─────────────────────────────────────────────
+model Password {
+  id                String   @id @default(uuid())
+  service           String
+  username          String
+  passwordEncrypted String   @map("password_encrypted")
+  notes             String?
+  createdById       String   @map("created_by")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  createdBy         User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@map("passwords")
+}
+
+// ─────────────────────────────────────────────
+// PROJECTS / SALES
+// ─────────────────────────────────────────────
+model Project {
+  id          String        @id @default(uuid())
+  clientName  String        @map("client_name")
+  type        String        // landing, ecommerce, bot, etc.
+  price       Float         @default(0)
+  status      String        @default("pending")     // "pending" | "in_progress" | "completed"
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@map("projects")
+}
+
+// ─────────────────────────────────────────────
+// TASKS / IDEAS (Kanban)
+// ─────────────────────────────────────────────
+model Task {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  status      String     @default("idea")    // "idea" | "pending" | "in_progress" | "done"
+  assignedTo  String?    @map("assigned_to")
+  createdById String?    @map("created_by") // user who submitted this task
+  priority    String     @default("medium")  // "low" | "medium" | "high"
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  assignee    User?      @relation("AssignedTasks", fields: [assignedTo], references: [id], onDelete: SetNull)
+  creator     User?      @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@map("tasks")
+}
+
+// ─────────────────────────────────────────────
+// EXPENSES
+// ─────────────────────────────────────────────
+model Expense {
+  id          String   @id @default(uuid())
+  description String
+  amount      Float
+  category    String
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("expenses")
+}
+
+// ─────────────────────────────────────────────
+// WEBSITES MONITORING
+// ─────────────────────────────────────────────
+model Website {
+  id        String          @id @default(uuid())
+  name      String
+  domain    String          @unique
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  statuses  WebsiteStatus[]
+
+  @@map("websites")
+}
+
+model WebsiteStatus {
+  id                String       @id @default(uuid())
+  websiteId         String       @map("website_id")
+  frontendStatus    String        @map("frontend_status")  // "online" | "slow" | "offline"
+  backendStatus     String        @map("backend_status")   // "online" | "slow" | "offline"
+  responseTime      Int?          @map("response_time")   // ms
+  ttfb              Int?                                   // ms
+  uptimePercentage  Float?        @map("uptime_percentage")
+  checkedAt         DateTime      @default(now()) @map("checked_at")
+
+  website           Website       @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@map("website_statuses")
+}
