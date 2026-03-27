@@ -33,10 +33,10 @@ export function IncomeChart({ monthlyData }: Props) {
     : fallbackData
 
   const primaryColor = theme === 'violet'
-    ? 'oklch(0.7 0.25 280)'
+    ? '#a855f7'
     : theme === 'dark'
-      ? 'oklch(0.65 0.22 280)'
-      : 'oklch(0.45 0.2 280)'
+      ? '#8b5cf6'
+      : '#7c3aed'
 
   return (
     <Card className={cn('col-span-full', theme === 'violet' && 'glass-card border-primary/20')}>
@@ -60,17 +60,17 @@ export function IncomeChart({ monthlyData }: Props) {
               </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke={theme === 'violet' ? 'oklch(0.3 0.08 280 / 0.3)' : 'oklch(0.5 0 0 / 0.1)'}
+                stroke={theme === 'violet' ? 'rgba(139,92,246,0.2)' : 'rgba(128,128,128,0.15)'}
                 vertical={false}
               />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: 'oklch(0.6 0 0)', fontSize: 12 }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: 'oklch(0.6 0 0)', fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: theme === 'dark' || theme === 'violet' ? '#9ca3af' : '#6b7280', fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: theme === 'dark' || theme === 'violet' ? '#9ca3af' : '#6b7280', fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: theme === 'violet' ? 'oklch(0.12 0.035 280)' : theme === 'dark' ? 'oklch(0.15 0.015 280)' : 'white',
-                  border: `1px solid ${theme === 'violet' ? 'oklch(0.3 0.08 280 / 0.5)' : 'oklch(0.88 0.02 280)'}`,
+                  backgroundColor: theme === 'violet' ? '#1a0a2e' : theme === 'dark' ? '#1e1b2e' : '#ffffff',
+                  border: `1px solid ${theme === 'violet' ? 'rgba(139,92,246,0.4)' : theme === 'dark' ? 'rgba(139,92,246,0.3)' : '#e5e7eb'}`,
                   borderRadius: '8px',
-                  color: theme === 'light' ? 'oklch(0.145 0 0)' : 'oklch(0.93 0 0)',
+                  color: theme === 'light' ? '#111827' : '#f3f4f6',
                 }}
                 formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
               />

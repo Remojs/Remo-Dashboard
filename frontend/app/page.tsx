@@ -20,19 +20,18 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      projectsApi.getAll({ limit: 200 }),
+    Promise.allSettled([
+      projectsApi.getAll({ limit: 100 }),
       tasksApi.getAll({ limit: 50 }),
       expensesApi.getMonthly(),
       projectsApi.getMonthlyRevenue(),
     ])
       .then(([p, t, e, r]) => {
-        setProjects(p.data)
-        setTasks(t.data)
-        setMonthly(e.data)
-        setMonthlyRevenue(r.data)
+        if (p.status === 'fulfilled') setProjects(p.value.data)
+        if (t.status === 'fulfilled') setTasks(t.value.data)
+        if (e.status === 'fulfilled') setMonthly(e.value.data)
+        if (r.status === 'fulfilled') setMonthlyRevenue(r.value.data)
       })
-      .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
 
@@ -43,6 +42,10 @@ export default function DashboardPage() {
   const doneTasks = tasks.filter((t) => t.status === 'done').length
   const totalRevenue = projects
     .filter((p) => p.status === 'completed')
+    .reduce((acc, p) => acc + parseFloat(p.price), 0)
+
+  const pendingRevenue = projects
+    .filter((p) => p.status === 'in_progress')
     .reduce((acc, p) => acc + parseFloat(p.price), 0)
 
   const activeProjectsList = projects.filter((p) => p.status === 'in_progress').slice(0, 5)
@@ -83,10 +86,12 @@ export default function DashboardPage() {
     {
       title: 'Ingresos',
       value: loading ? '...' : `$${totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
-      change: `${monthly?.grandTotal ? `$${monthly.grandTotal.toFixed(0)} gastos` : '—'}`,
+      change: pendingRevenue > 0
+        ? `$${pendingRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })} pendientes`
+        : 'sin proyectos en curso',
       changeType: 'positive' as const,
       icon: DollarSign,
-      description: 'proyectos completados',
+      description: 'cobrado (completados)',
     },
   ]
 

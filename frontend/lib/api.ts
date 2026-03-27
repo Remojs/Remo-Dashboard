@@ -173,6 +173,26 @@ export interface WebsiteStatus {
   checkedAt: string
 }
 
+export interface ToolItem {
+  id: string
+  name: string
+  description: string
+  url: string
+  color: string
+  emoji: string
+  createdAt: string
+}
+
+export interface AdminDashboardItem {
+  id: string
+  name: string
+  description: string
+  url: string
+  color: string
+  emoji: string
+  createdAt: string
+}
+
 // ── Auth module ───────────────────────────────────────────────────────────────
 export const authApi = {
   login: (email: string, password: string) =>
@@ -297,4 +317,28 @@ export const websitesApi = {
 
   checkAll: () =>
     request<ApiResponse<WebsiteStatus[]>>('/websites/check', { method: 'POST' }),
+}
+
+// ── Tools module ──────────────────────────────────────────────────────────────
+export const toolsApi = {
+  getAll: (params?: Record<string, string | number>) =>
+    request<PaginatedResponse<ToolItem>>('/tools', { params }),
+
+  create: (data: { name: string; description?: string; url: string; color: string; emoji: string }) =>
+    request<ApiResponse<ToolItem>>('/tools', { method: 'POST', body: data }),
+
+  remove: (id: string) =>
+    request<ApiResponse<null>>(`/tools/${id}`, { method: 'DELETE' }),
+}
+
+// ── Admin dashboards module ───────────────────────────────────────────────────
+export const adminDashboardsApi = {
+  getAll: (params?: Record<string, string | number>) =>
+    request<PaginatedResponse<AdminDashboardItem>>('/admin-dashboards', { params }),
+
+  create: (data: { name: string; description?: string; url: string; color: string; emoji: string }) =>
+    request<ApiResponse<AdminDashboardItem>>('/admin-dashboards', { method: 'POST', body: data }),
+
+  remove: (id: string) =>
+    request<ApiResponse<null>>(`/admin-dashboards/${id}`, { method: 'DELETE' }),
 }

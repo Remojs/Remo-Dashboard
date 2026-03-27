@@ -25,18 +25,30 @@ const ownerTextColor: Record<PromocionOwnerColor, string> = {
 
 export function Promociones() {
   const { theme } = useTheme()
-  const [rubros, setRubros] = useState<string[]>(PROMOCIONES_RUBROS)
+  const [rubros, setRubros] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return PROMOCIONES_RUBROS
+    try {
+      const saved = localStorage.getItem('promociones-rubros')
+      return saved ? JSON.parse(saved) : PROMOCIONES_RUBROS
+    } catch {
+      return PROMOCIONES_RUBROS
+    }
+  })
   const [newRubro, setNewRubro] = useState('')
 
   const handleAddRubro = () => {
     const value = newRubro.trim()
     if (!value) return
-    setRubros((prev) => [...prev, value])
+    const updated = [...rubros, value]
+    setRubros(updated)
+    localStorage.setItem('promociones-rubros', JSON.stringify(updated))
     setNewRubro('')
   }
 
   const handleRemoveRubro = (index: number) => {
-    setRubros((prev) => prev.filter((_, i) => i !== index))
+    const updated = rubros.filter((_, i) => i !== index)
+    setRubros(updated)
+    localStorage.setItem('promociones-rubros', JSON.stringify(updated))
   }
 
   return (

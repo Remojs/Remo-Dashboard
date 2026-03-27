@@ -8,6 +8,8 @@ const projectRoutes = require('./projectRoutes');
 const taskRoutes = require('./taskRoutes');
 const expenseRoutes = require('./expenseRoutes');
 const websiteRoutes = require('./websiteRoutes');
+const toolRoutes = require('./toolRoutes');
+const adminDashboardRoutes = require('./adminDashboardRoutes');
 
 const router = Router();
 
@@ -19,5 +21,7 @@ router.use('/projects', projectRoutes);
 router.use('/tasks', taskRoutes);
 router.use('/expenses', expenseRoutes);
 router.use('/websites', websiteRoutes);
+router.use('/tools', toolRoutes);
+router.use('/admin-dashboards', adminDashboardRoutes);
 
 module.exports = router;

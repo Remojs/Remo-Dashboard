@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts'
 import { expensesApi, type Expense, type MonthlyExpenses } from '@/lib/api'
+import { useTheme } from 'next-themes'
 
 const MONTH_ABBR = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
@@ -26,6 +27,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 const EMPTY_FORM = { description: '', amount: '', category: 'other', date: new Date().toISOString().split('T')[0] }
 
 export default function ExpensesPage() {
+  const { theme } = useTheme()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [monthly, setMonthly] = useState<MonthlyExpenses | null>(null)
   const [loading, setLoading] = useState(true)
@@ -113,21 +115,26 @@ export default function ExpensesPage() {
             <CardDescription>Año {monthly?.year ?? new Date().getFullYear()}</CardDescription>
           </CardHeader>
           <CardContent>
+            {(() => {
+              const chartColor = theme === 'violet' ? '#a855f7' : theme === 'dark' ? '#8b5cf6' : '#7c3aed'
+              return (
             <ResponsiveContainer width="100%" height={180}>
               <AreaChart data={chartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                 <defs>
                   <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                    <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={chartColor} stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v: number) => [`$${v.toLocaleString('es-AR')}`, 'Gastos']} />
-                <Area type="monotone" dataKey="gastos" stroke="hsl(var(--primary))" fill="url(#expGrad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="gastos" stroke={chartColor} fill="url(#expGrad)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
+              )
+            })()}
           </CardContent>
         </Card>
 

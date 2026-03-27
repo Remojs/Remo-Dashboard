@@ -105,10 +105,13 @@ export default function PasswordsPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{record.service}</p>
                     <p className="text-xs text-muted-foreground truncate">{record.username}</p>
+                    {record.notes && (
+                      <p className="text-xs text-muted-foreground/70 truncate italic">{record.notes}</p>
+                    )}
                   </div>
                   {/* Password field */}
                   <div className="flex items-center gap-1 shrink-0">
-                    <code className={cn('text-xs font-mono bg-muted rounded px-2 py-1 w-28 text-center truncate', theme === 'violet' && 'bg-primary/5')}>
+                    <code className={cn('text-xs font-mono bg-muted text-foreground rounded px-2 py-1 w-28 text-center truncate', theme === 'violet' && 'bg-primary/10')}>
                       {revealed[record.id] ? revealed[record.id] : '••••••••••'}
                     </code>
                     <Button variant="ghost" size="icon" className="size-7" onClick={() => handleReveal(record.id)}>

@@ -141,8 +141,7 @@ export default function VitalsPage() {
                 <TableRow>
                   <TableHead>Sitio</TableHead>
                   <TableHead>Dominio</TableHead>
-                  <TableHead>Frontend</TableHead>
-                  <TableHead>Backend</TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead>Tiempo resp.</TableHead>
                   {user?.role === 'admin' && <TableHead className="text-right">Acción</TableHead>}
                 </TableRow>
@@ -150,10 +149,10 @@ export default function VitalsPage() {
               <TableBody>
                 {loading
                   ? Array.from({ length: 4 }).map((_, i) => (
-                    <TableRow key={i}>{Array.from({ length: 6 }).map((_, j) => <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>)}</TableRow>
+                    <TableRow key={i}>{Array.from({ length: 5 }).map((_, j) => <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>)}</TableRow>
                   ))
                   : websites.length === 0
-                    ? <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-10">No hay sitios configurados</TableCell></TableRow>
+                    ? <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-10">No hay sitios configurados</TableCell></TableRow>
                     : websites.map((site) => {
                       const latest = site.statuses?.[0]
                       return (
@@ -164,8 +163,18 @@ export default function VitalsPage() {
                               {site.domain} <ExternalLink className="size-3" />
                             </a>
                           </TableCell>
-                          <TableCell>{getStatusBadge(latest?.frontendStatus)}</TableCell>
-                          <TableCell>{getStatusBadge(latest?.backendStatus)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-muted-foreground w-16">Frontend</span>
+                                {getStatusBadge(latest?.frontendStatus)}
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-muted-foreground w-16">Backend</span>
+                                {getStatusBadge(latest?.backendStatus)}
+                              </div>
+                            </div>
+                          </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {latest?.responseTime != null ? `${latest.responseTime} ms` : '—'}
                           </TableCell>

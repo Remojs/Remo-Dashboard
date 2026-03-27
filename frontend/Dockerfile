@@ -17,6 +17,9 @@ COPY . .
 ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
+# Signal to next.config.mjs that we want standalone output
+ENV DOCKER_BUILD=1
+
 RUN npm run build
 
 # ── Production image ──
