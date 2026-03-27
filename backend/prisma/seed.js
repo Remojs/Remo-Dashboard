@@ -12,37 +12,39 @@ async function main() {
   console.log('🌱  Starting seed...');
 
   // ── Users ──────────────────────────────────────────
-  const hashedPw = await bcrypt.hash('Password123!', 12);
+  const hashedSantino = await bcrypt.hash('ISs2026@dpS', 12);
+  const hashedThiago  = await bcrypt.hash('ISt2026@dpT', 12);
+  const hashedLucas   = await bcrypt.hash('ISl2026@dpL', 12);
 
   const santino = await prisma.user.upsert({
-    where: { email: 'santino@interaktive.com' },
+    where: { email: 'santino@interaktivesolutions.com' },
     update: {},
     create: {
       name: 'Santino',
-      email: 'santino@interaktive.com',
-      password: hashedPw,
+      email: 'santino@interaktivesolutions.com',
+      password: hashedSantino,
       role: 'admin',
     },
   });
 
   const thiago = await prisma.user.upsert({
-    where: { email: 'thiago@interaktive.com' },
+    where: { email: 'thiago@interaktivesolutions.com' },
     update: {},
     create: {
       name: 'Thiago',
-      email: 'thiago@interaktive.com',
-      password: hashedPw,
+      email: 'thiago@interaktivesolutions.com',
+      password: hashedThiago,
       role: 'user',
     },
   });
 
   const lucas = await prisma.user.upsert({
-    where: { email: 'lucas@interaktive.com' },
+    where: { email: 'lucas@interaktivesolutions.com' },
     update: {},
     create: {
       name: 'Lucas',
-      email: 'lucas@interaktive.com',
-      password: hashedPw,
+      email: 'lucas@interaktivesolutions.com',
+      password: hashedLucas,
       role: 'user',
     },
   });
@@ -153,7 +155,7 @@ async function main() {
   console.log('✅  Websites seeded');
 
   console.log('\n🎉  Seed completed successfully!');
-  console.log('   Default password for all users: Password123!');
+
 }
 
 main()

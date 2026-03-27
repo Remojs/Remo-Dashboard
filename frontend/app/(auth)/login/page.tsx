@@ -55,7 +55,7 @@ export default function LoginPage() {
             <Input
               id="email"
               type="email"
-              placeholder="santino@interaktive.com"
+              placeholder="usuario@interaktivesolutions.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -96,9 +96,7 @@ export default function LoginPage() {
             {loading ? 'Ingresando...' : 'Iniciar sesión'}
           </Button>
 
-          <p className="text-center text-xs text-muted-foreground">
-            Demo: santino@interaktive.com / Password123!
-          </p>
+
         </form>
       </CardContent>
     </Card>
