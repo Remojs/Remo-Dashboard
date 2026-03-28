@@ -28,6 +28,15 @@ const remove = async (req, res, next) => {
   }
 };
 
+const update = async (req, res, next) => {
+  try {
+    const website = await websiteService.update(req.params.id, req.body);
+    return success(res, website, 'Website updated successfully.');
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getStatus = async (req, res, next) => {
   try {
     const data = await websiteService.getStatus(req.params.id, req.query);
@@ -47,4 +56,4 @@ const check = async (req, res, next) => {
   }
 };
 
-module.exports = { getAll, create, remove, getStatus, check };
+module.exports = { getAll, create, update, remove, getStatus, check };

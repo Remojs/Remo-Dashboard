@@ -309,6 +309,9 @@ export const websitesApi = {
   create: (data: { name: string; domain: string }) =>
     request<ApiResponse<Website>>('/websites', { method: 'POST', body: data }),
 
+  update: (id: string, data: { name?: string; domain?: string }) =>
+    request<ApiResponse<Website>>(`/websites/${id}`, { method: 'PATCH', body: data }),
+
   remove: (id: string) =>
     request<ApiResponse<null>>(`/websites/${id}`, { method: 'DELETE' }),
 

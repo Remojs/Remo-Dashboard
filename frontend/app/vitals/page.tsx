@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Globe, Plus, RefreshCw, Trash2, ExternalLink } from 'lucide-react'
+import { Globe, Plus, RefreshCw, Trash2, ExternalLink, Pencil } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { websitesApi, type Website } from '@/lib/api'
-import { useAuth } from '@/contexts/auth-context'
 import { cn } from '@/lib/utils'
 
 const STATUS_MAP = {
@@ -23,7 +22,6 @@ const STATUS_MAP = {
 }
 
 export default function VitalsPage() {
-  const { user } = useAuth()
   const [websites, setWebsites] = useState<Website[]>([])
   const [loading, setLoading] = useState(true)
   const [checking, setChecking] = useState(false)
@@ -31,6 +29,8 @@ export default function VitalsPage() {
   const [form, setForm] = useState({ name: '', domain: '' })
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Website | null>(null)
+  const [editTarget, setEditTarget] = useState<Website | null>(null)
+  const [editForm, setEditForm] = useState({ name: '', domain: '' })
 
   const load = () => {
     setLoading(true)
@@ -76,6 +76,26 @@ export default function VitalsPage() {
     setDeleteTarget(null)
   }
 
+  const openEdit = (site: Website) => {
+    setEditTarget(site)
+    setEditForm({ name: site.name, domain: site.domain })
+  }
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editTarget) return
+    setSaving(true)
+    try {
+      const res = await websitesApi.update(editTarget.id, editForm)
+      setWebsites((prev) => prev.map((w) => w.id === editTarget.id ? { ...w, ...res.data } : w))
+      setEditTarget(null)
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const onlineCount = websites.filter((w) => w.statuses?.[0]?.frontendStatus === 'online').length
   const checkedAt = websites[0]?.statuses?.[0]?.checkedAt
 
@@ -107,11 +127,9 @@ export default function VitalsPage() {
               <RefreshCw className={cn('size-4 mr-1', checking && 'animate-spin')} />
               {checking ? 'Chequeando...' : 'Chequear ahora'}
             </Button>
-            {user?.role === 'admin' && (
-              <Button size="sm" onClick={() => setAddOpen(true)}>
-                <Plus className="size-4 mr-1" /> Agregar sitio
-              </Button>
-            )}
+            <Button size="sm" onClick={() => setAddOpen(true)}>
+              <Plus className="size-4 mr-1" /> Agregar sitio
+            </Button>
           </div>
         </div>
 
@@ -143,7 +161,7 @@ export default function VitalsPage() {
                   <TableHead>Dominio</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Tiempo resp.</TableHead>
-                  {user?.role === 'admin' && <TableHead className="text-right">Acción</TableHead>}
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -178,13 +196,16 @@ export default function VitalsPage() {
                           <TableCell className="text-sm text-muted-foreground">
                             {latest?.responseTime != null ? `${latest.responseTime} ms` : '—'}
                           </TableCell>
-                          {user?.role === 'admin' && (
-                            <TableCell className="text-right">
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(site)}>
+                                <Pencil className="size-3.5" />
+                              </Button>
                               <Button variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(site)}>
                                 <Trash2 className="size-3.5" />
                               </Button>
-                            </TableCell>
-                          )}
+                            </div>
+                          </TableCell>
                         </TableRow>
                       )
                     })
@@ -225,6 +246,27 @@ export default function VitalsPage() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit site dialog */}
+      <Dialog open={!!editTarget} onOpenChange={() => setEditTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar sitio web</DialogTitle></DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Nombre</Label>
+              <Input required value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="Panel de clientes" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Dominio (sin https://)</Label>
+              <Input required value={editForm.domain} onChange={(e) => setEditForm({ ...editForm, domain: e.target.value })} placeholder="app.tuempresa.com" />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
+              <Button type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

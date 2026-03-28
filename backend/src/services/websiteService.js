@@ -28,6 +28,19 @@ const create = async ({ name, domain }) => {
   return prisma.website.create({ data: { name, domain: normalised } });
 };
 
+const update = async (id, { name, domain }) => {
+  const existing = await prisma.website.findUnique({ where: { id } });
+  if (!existing) {
+    const err = new Error('Website not found.');
+    err.statusCode = 404;
+    throw err;
+  }
+  const data = {};
+  if (name !== undefined) data.name = name;
+  if (domain !== undefined) data.domain = domain.replace(/\/$/, '').toLowerCase();
+  return prisma.website.update({ where: { id }, data });
+};
+
 const remove = async (id) => {
   const existing = await prisma.website.findUnique({ where: { id } });
   if (!existing) {
@@ -110,4 +123,4 @@ const checkAndStore = async (id = null) => {
     .map((r) => r.value);
 };
 
-module.exports = { getAll, create, remove, getStatus, checkAndStore };
+module.exports = { getAll, create, update, remove, getStatus, checkAndStore };

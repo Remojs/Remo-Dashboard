@@ -8,8 +8,9 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', validatePagination, websiteController.getAll);
-router.post('/', authorize('admin'), requireFields(['name', 'domain']), websiteController.create);
-router.delete('/:id', authorize('admin'), websiteController.remove);
+router.post('/', requireFields(['name', 'domain']), websiteController.create);
+router.patch('/:id', websiteController.update);
+router.delete('/:id', websiteController.remove);
 router.get('/:id/status', validatePagination, websiteController.getStatus);
 router.post('/check', websiteController.check);
 
