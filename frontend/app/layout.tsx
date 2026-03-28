@@ -10,8 +10,8 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: 'Interaktive Admin Dashboard',
-  description: 'Panel de administración interactivo con estilo futurista',
-  generator: 'v0.app',
+  description: 'Panel de administracion de Interaktive',
+  generator: 'Interaktive Admin',
 }
 
 export default function RootLayout({
