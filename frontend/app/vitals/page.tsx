@@ -229,7 +229,7 @@ export default function VitalsPage() {
       </Dialog>
 
       {/* Delete dialog */}
-      <Dialog open={npm install n8n -gdeleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+      <Dialog open={deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Eliminar sitio</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">¿Eliminar <strong>{deleteTarget?.name}</strong> del monitoreo?</p>
@@ -241,7 +241,7 @@ export default function VitalsPage() {
       </Dialog>
 
       {/* Edit dialog */}
-      <Dialog open={npm install n8n -geditTarget} onOpenChange={() => setEditTarget(null)}>
+      <Dialog open={editTarget} onOpenChange={() => setEditTarget(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Editar sitio web</DialogTitle></DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4">
