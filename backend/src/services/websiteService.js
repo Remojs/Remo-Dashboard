@@ -23,12 +23,12 @@ const getAll = async (query) => {
   return { websites, meta: buildMeta(total, page, limit) };
 };
 
-const create = async ({ name, domain }) => {
+const create = async ({ name, domain, type }) => {
   const normalised = domain.replace(/\/$/, '').toLowerCase();
-  return prisma.website.create({ data: { name, domain: normalised } });
+  return prisma.website.create({ data: { name, domain: normalised, type: type || 'frontend' } });
 };
 
-const update = async (id, { name, domain }) => {
+const update = async (id, { name, domain, type }) => {
   const existing = await prisma.website.findUnique({ where: { id } });
   if (!existing) {
     const err = new Error('Website not found.');
@@ -38,6 +38,7 @@ const update = async (id, { name, domain }) => {
   const data = {};
   if (name !== undefined) data.name = name;
   if (domain !== undefined) data.domain = domain.replace(/\/$/, '').toLowerCase();
+  if (type !== undefined) data.type = type;
   return prisma.website.update({ where: { id }, data });
 };
 

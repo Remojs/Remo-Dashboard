@@ -9,9 +9,9 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Interaktive Admin Dashboard',
-  description: 'Panel de administracion de Interaktive',
-  generator: 'Interaktive Admin',
+  title: 'Remocode Dash',
+  description: 'Panel de administración personal',
+  generator: 'Remocode Dash',
 }
 
 export default function RootLayout({
@@ -24,10 +24,11 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="violet"
-          themes={['light', 'dark', 'violet']}
+          defaultTheme="dark"
+          themes={['dark']}
           enableSystem={false}
           disableTransitionOnChange
+          forcedTheme="dark"
         >
           <AuthProvider>
             {children}
@@ -38,3 +39,4 @@ export default function RootLayout({
     </html>
   )
 }
+

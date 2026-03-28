@@ -1,20 +1,19 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Eye, EyeOff } from 'lucide-react'
+import logo from '@/assets/logo.png'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useTheme } from 'next-themes'
-import { cn } from '@/lib/utils'
-import logo from '@/assets/logo.png'
 
 export default function LoginPage() {
   const { login } = useAuth()
-  const { theme } = useTheme()
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
@@ -27,7 +26,8 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await login(email, password)
-      window.location.href = '/'
+      router.push('/')
+      router.refresh()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión.')
     } finally {
@@ -36,16 +36,13 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className={cn(
-      'w-full max-w-sm shadow-2xl',
-      theme === 'violet' && 'glass-card border-primary/30'
-    )}>
+    <Card className="w-full max-w-sm shadow-2xl border-border/60">
       <CardHeader className="text-center pb-2">
         <div className="mx-auto mb-3 flex items-center justify-center">
-          <Image src={logo} alt="Interaktive" width={64} height={64} className="rounded-xl" />
+          <Image src={logo} alt="Remocode" height={56} priority />
         </div>
-        <CardTitle className="text-xl font-bold">Interaktive</CardTitle>
-        <CardDescription>Ingresa tus credenciales para continuar</CardDescription>
+        <CardTitle className="text-xl font-bold">Remocode Dashboard</CardTitle>
+        <CardDescription>Ingresá tus credenciales para continuar</CardDescription>
       </CardHeader>
 
       <CardContent>
@@ -55,7 +52,7 @@ export default function LoginPage() {
             <Input
               id="email"
               type="email"
-              placeholder="usuario@interaktivesolutions.com"
+              placeholder="tu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -78,7 +75,6 @@ export default function LoginPage() {
               />
               <button
                 type="button"
-                onClick={() => setShowPw(!showPw)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -95,8 +91,6 @@ export default function LoginPage() {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Ingresando...' : 'Iniciar sesión'}
           </Button>
-
-
         </form>
       </CardContent>
     </Card>

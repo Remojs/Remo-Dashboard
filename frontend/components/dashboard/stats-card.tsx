@@ -1,6 +1,5 @@
 'use client'
 
-import { useTheme } from 'next-themes'
 import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -22,21 +21,13 @@ export function StatsCard({
   icon: Icon,
   description,
 }: StatsCardProps) {
-  const { theme } = useTheme()
-
   return (
-    <Card className={cn(
-      "relative overflow-hidden transition-all duration-300 hover:shadow-lg",
-      theme === 'violet' && "glass-card border-primary/20 hover:border-primary/40"
-    )}>
+    <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className={cn(
-          "flex size-8 items-center justify-center rounded-lg",
-          theme === 'violet' ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"
-        )}>
+        <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Icon className="size-4" />
         </div>
       </CardHeader>
@@ -62,11 +53,6 @@ export function StatsCard({
           )}
         </div>
       </CardContent>
-      
-      {/* Decorative gradient for violet theme */}
-      {theme === 'violet' && (
-        <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/10 blur-2xl" />
-      )}
     </Card>
   )
 }

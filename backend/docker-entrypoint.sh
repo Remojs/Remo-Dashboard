@@ -1,24 +1,32 @@
 #!/bin/sh
 # docker-entrypoint.sh
-# Crea/actualiza el schema de SQLite y hace seed en el primer boot.
+# Aplica el schema de SQLite y crea el admin desde variables de entorno.
 
 set -e
 
 echo "⏳ Aplicando schema (prisma db push)..."
 npx prisma db push --accept-data-loss
 
-# Seed solo si la tabla de users está vacía
-echo "🌱 Verificando seed..."
+# Crear admin desde env vars si la tabla de users está vacía
+echo "👤 Verificando usuario admin..."
 node -e "
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 const p = new PrismaClient();
-p.user.count().then(n => {
+const email = process.env.ADMIN_EMAIL;
+const password = process.env.ADMIN_PASSWORD;
+const name = process.env.ADMIN_NAME || 'Admin';
+p.user.count().then(async n => {
   if (n === 0) {
-    console.log('DB vacía, ejecutando seed...');
-    const { execSync } = require('child_process');
-    execSync('node prisma/seed.js', { stdio: 'inherit' });
+    if (!email || !password) {
+      console.warn('⚠️  ADMIN_EMAIL / ADMIN_PASSWORD no definidos. No se creó usuario admin.');
+    } else {
+      const hashed = await bcrypt.hash(password, 12);
+      await p.user.create({ data: { name, email, password: hashed, role: 'admin' } });
+      console.log('✅ Usuario admin creado:', email);
+    }
   } else {
-    console.log('Ya hay ' + n + ' usuario(s). Seed omitido.');
+    console.log('ℹ️  Ya hay ' + n + ' usuario(s). Creación omitida.');
   }
   p.\$disconnect();
 }).catch(e => { console.error(e); process.exit(1); });

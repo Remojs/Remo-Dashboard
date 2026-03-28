@@ -1,8 +1,6 @@
 'use client'
 
-import { useTheme } from 'next-themes'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
 import {
   AreaChart,
   Area,
@@ -23,13 +21,13 @@ const fallbackData = [
   { month: 'Oct', expenses: 0 }, { month: 'Nov', expenses: 0 }, { month: 'Dic', expenses: 0 },
 ]
 
+const ACCENT_COLOR = '#e05c45'
+
 interface Props {
   monthlyData?: MonthlyExpenses | null
 }
 
 export function RevenueChart({ monthlyData }: Props) {
-  const { theme } = useTheme()
-
   const chartData = monthlyData
     ? monthlyData.monthly.map((m) => ({
         month: MONTH_ABBR[m.month - 1],
@@ -37,20 +35,8 @@ export function RevenueChart({ monthlyData }: Props) {
       }))
     : fallbackData
 
-  const primaryColor = theme === 'violet'
-    ? '#a855f7'
-    : theme === 'dark'
-      ? '#8b5cf6'
-      : '#7c3aed'
-
-  const accentColor = theme === 'violet'
-    ? '#38bdf8'
-    : theme === 'dark'
-      ? '#60a5fa'
-      : '#0ea5e9'
-
   return (
-    <Card className={cn('col-span-full', theme === 'violet' && 'glass-card border-primary/20')}>
+    <Card className="col-span-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">Gastos Mensuales</CardTitle>
         <CardDescription>
@@ -65,33 +51,29 @@ export function RevenueChart({ monthlyData }: Props) {
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={accentColor} stopOpacity={0} />
+                  <stop offset="5%" stopColor={ACCENT_COLOR} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={ACCENT_COLOR} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={theme === 'violet' ? 'rgba(139,92,246,0.2)' : 'rgba(128,128,128,0.15)'}
-                vertical={false}
-              />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: theme === 'dark' || theme === 'violet' ? '#9ca3af' : '#6b7280', fontSize: 12 }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: theme === 'dark' || theme === 'violet' ? '#9ca3af' : '#6b7280', fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" vertical={false} />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: theme === 'violet' ? '#1a0a2e' : theme === 'dark' ? '#1e1b2e' : '#ffffff',
-                  border: `1px solid ${theme === 'violet' ? 'rgba(139,92,246,0.4)' : theme === 'dark' ? 'rgba(139,92,246,0.3)' : '#e5e7eb'}`,
+                  backgroundColor: '#0f0a0a',
+                  border: '1px solid rgba(224,92,69,0.4)',
                   borderRadius: '8px',
-                  color: theme === 'light' ? '#111827' : '#f3f4f6',
+                  color: '#f3f4f6',
                 }}
                 formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
               />
-              <Area type="monotone" dataKey="expenses" name="Gastos" stroke={accentColor} strokeWidth={2} fillOpacity={1} fill="url(#colorExpenses)" />
+              <Area type="monotone" dataKey="expenses" name="Gastos" stroke={ACCENT_COLOR} strokeWidth={2} fillOpacity={1} fill="url(#colorExpenses)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
         <div className="flex items-center justify-center gap-6 mt-4">
           <div className="flex items-center gap-2">
-            <div className="size-3 rounded-full" style={{ backgroundColor: accentColor }} />
+            <div className="size-3 rounded-full" style={{ backgroundColor: ACCENT_COLOR }} />
             <span className="text-sm text-muted-foreground">Gastos</span>
           </div>
         </div>

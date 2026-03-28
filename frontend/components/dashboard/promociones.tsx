@@ -1,15 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useTheme } from 'next-themes'
-import Image from 'next/image'
 import { MapPin, Plus, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { PROMOCIONES_OWNERS, PROMOCIONES_RUBROS, type PromocionOwnerColor } from '@/lib/dashboard-config'
-import mapImage from '@/assets/map.png'
 
 const ownerDotColor: Record<PromocionOwnerColor, string> = {
   blue: 'bg-sky-500',
@@ -24,7 +21,6 @@ const ownerTextColor: Record<PromocionOwnerColor, string> = {
 }
 
 export function Promociones() {
-  const { theme } = useTheme()
   const [rubros, setRubros] = useState<string[]>(() => {
     if (typeof window === 'undefined') return PROMOCIONES_RUBROS
     try {
@@ -54,30 +50,25 @@ export function Promociones() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <MapPin className={cn('size-5', theme === 'violet' ? 'text-primary' : 'text-foreground')} />
+        <MapPin className="size-5 text-primary" />
         <h2 className="text-lg font-semibold tracking-tight">Promociones</h2>
         <span className="text-sm text-muted-foreground">— Mapa, responsables y rubros</span>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className={cn(theme === 'violet' && 'glass-card border-primary/20')}>
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Mapa</CardTitle>
             <CardDescription>Referencia visual de zonas</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="mx-auto w-[55%] overflow-hidden rounded-xl border border-border bg-background/40">
-              <Image
-                src={mapImage}
-                alt="Mapa de promociones"
-                className="h-auto w-full object-contain"
-                priority
-              />
+            <div className="mx-auto w-[55%] flex items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 h-40 text-sm text-muted-foreground">
+              Sin mapa cargado
             </div>
           </CardContent>
         </Card>
 
-        <Card className={cn(theme === 'violet' && 'glass-card border-primary/20')}>
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Responsables por color</CardTitle>
             <CardDescription>Santino azul, Thiago verde, Lucas amarillo</CardDescription>
@@ -99,7 +90,7 @@ export function Promociones() {
         </Card>
       </div>
 
-      <Card className={cn(theme === 'violet' && 'glass-card border-primary/20')}>
+      <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Rubros</CardTitle>
           <CardDescription>

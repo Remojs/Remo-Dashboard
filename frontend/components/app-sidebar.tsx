@@ -2,24 +2,20 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
-  Mail,
   KeyRound,
-  ShoppingCart,
   Lightbulb,
   DollarSign,
   Activity,
-  Settings,
   ChevronDown,
   LogOut,
   Wrench,
   PanelsTopLeft,
-  Megaphone,
+  ListChecks,
+  CreditCard,
 } from 'lucide-react'
-import logo from '@/assets/logo.png'
 import {
   Sidebar,
   SidebarContent,
@@ -45,16 +41,13 @@ import { useAuth } from '@/contexts/auth-context'
 
 const navigationItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/' },
-  { title: 'Mail', icon: Mail, href: '/mail' },
   { title: 'Passwords', icon: KeyRound, href: '/passwords' },
-  { title: 'Sales / Projects', icon: ShoppingCart, href: '/sales' },
-  { title: 'Ideas & Tasks', icon: Lightbulb, href: '/tasks' },
+  { title: 'Tareas', icon: ListChecks, href: '/tasks' },
   { title: 'Expenses', icon: DollarSign, href: '/expenses' },
+  { title: 'Tracker Deuda', icon: CreditCard, href: '/debt' },
   { title: 'Web Vitals', icon: Activity, href: '/vitals' },
   { title: 'Herramientas', icon: Wrench, href: '/herramientas' },
   { title: 'Admin Dashboards', icon: PanelsTopLeft, href: '/admin-dashboards' },
-  { title: 'Promociones', icon: Megaphone, href: '/promociones' },
-  { title: 'Settings', icon: Settings, href: '/settings' },
 ]
 
 export function AppSidebar() {
@@ -69,14 +62,16 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
         <Link href="/" className="flex items-center gap-3">
-          <Image src={logo} alt="Interaktive" width={36} height={36} className="rounded-lg" />
+          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-base select-none">
+            R
+          </div>
           <div className="flex flex-col">
-            <span className="text-base font-semibold tracking-tight">Interaktive</span>
-            <span className="text-xs text-muted-foreground">Admin Dashboard</span>
+            <span className="text-base font-semibold tracking-tight">RemoDashboard</span>
+            <span className="text-xs text-muted-foreground">Panel personal</span>
           </div>
         </Link>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-4">
@@ -105,7 +100,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
+
       <SidebarFooter className="border-t border-sidebar-border p-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -123,12 +118,6 @@ export function AppSidebar() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[200px]">
-            <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
-                <Settings className="size-4" />
-                <span>Configuración</span>
-              </Link>
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={logout}

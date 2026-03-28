@@ -21,10 +21,11 @@ const getById = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    // If no assignedTo provided, auto-assign to the creator (tracks who submitted)
-    const body = { ...req.body };
-    if (!body.assignedTo && req.user?.id) body.assignedTo = req.user.id;
-    const task = await taskService.create(body);
+    const task = await taskService.create({
+      title: req.body.title,
+      description: req.body.description,
+      createdById: req.user?.id || null,
+    });
     return success(res, task, 'Task created successfully.', 201);
   } catch (err) {
     next(err);
@@ -50,3 +51,4 @@ const remove = async (req, res, next) => {
 };
 
 module.exports = { getAll, getById, create, update, remove };
+

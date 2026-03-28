@@ -5,9 +5,9 @@ const getAll = async (query) => {
   const { skip, take, page, limit } = parsePagination(query);
 
   const where = {};
-  if (query.status) where.status = query.status;
-  if (query.priority) where.priority = query.priority;
-  if (query.assignedTo) where.assignedTo = query.assignedTo;
+  if (query.completed !== undefined) {
+    where.completed = query.completed === 'true';
+  }
 
   const [tasks, total] = await prisma.$transaction([
     prisma.task.findMany({
@@ -15,9 +15,6 @@ const getAll = async (query) => {
       skip,
       take,
       orderBy: { createdAt: 'desc' },
-      include: {
-        assignee: { select: { id: true, name: true, email: true } },
-      },
     }),
     prisma.task.count({ where }),
   ]);
@@ -26,12 +23,7 @@ const getAll = async (query) => {
 };
 
 const getById = async (id) => {
-  const task = await prisma.task.findUnique({
-    where: { id },
-    include: {
-      assignee: { select: { id: true, name: true, email: true } },
-    },
-  });
+  const task = await prisma.task.findUnique({ where: { id } });
   if (!task) {
     const err = new Error('Task not found.');
     err.statusCode = 404;
@@ -40,38 +32,26 @@ const getById = async (id) => {
   return task;
 };
 
-const create = async ({ title, description, status, assignedTo, priority }) => {
+const create = async ({ title, description, createdById }) => {
   return prisma.task.create({
     data: {
       title,
       description: description || null,
-      status: status || 'idea',
-      assignedTo: assignedTo || null,
-      priority: priority || 'medium',
-    },
-    include: {
-      assignee: { select: { id: true, name: true, email: true } },
+      completed: false,
+      createdById: createdById || null,
     },
   });
 };
 
-const update = async (id, { title, description, status, assignedTo, priority }) => {
+const update = async (id, { title, description, completed }) => {
   await getById(id);
 
   const data = {};
-  if (title) data.title = title;
+  if (title !== undefined) data.title = title;
   if (description !== undefined) data.description = description;
-  if (status) data.status = status;
-  if (assignedTo !== undefined) data.assignedTo = assignedTo;
-  if (priority) data.priority = priority;
+  if (completed !== undefined) data.completed = Boolean(completed);
 
-  return prisma.task.update({
-    where: { id },
-    data,
-    include: {
-      assignee: { select: { id: true, name: true, email: true } },
-    },
-  });
+  return prisma.task.update({ where: { id }, data });
 };
 
 const remove = async (id) => {
@@ -80,3 +60,4 @@ const remove = async (id) => {
 };
 
 module.exports = { getAll, getById, create, update, remove };
+

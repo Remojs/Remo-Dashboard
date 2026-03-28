@@ -1,53 +1,29 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ListChecks, Lightbulb, Plus, ChevronRight, ChevronLeft, Trash2, User2 } from 'lucide-react'
+import { ListChecks, Plus, Trash2, Check, Terminal, Bot, Info } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { tasksApi, type Task } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { useTheme } from 'next-themes'
 
-// Kanban columns only — ideas are shown separately below
-const KANBAN_COLUMNS: { key: Task['status']; label: string }[] = [
-  { key: 'pending', label: 'Pendiente' },
-  { key: 'in_progress', label: 'En progreso' },
-  { key: 'done', label: 'Hecho' },
-]
-
-const PRIORITY_COLORS: Record<Task['priority'], string> = {
-  low: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-  medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400',
-  high: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
-}
-
-const PRIORITY_COLORS_VIOLET: Record<Task['priority'], string> = {
-  low: 'bg-slate-800/60 text-slate-300',
-  medium: 'bg-yellow-900/30 text-yellow-400',
-  high: 'bg-red-900/30 text-red-400',
-}
-
-const KANBAN_STATUS_ORDER: Task['status'][] = ['pending', 'in_progress', 'done']
-
-const EMPTY_FORM = { title: '', description: '', priority: 'medium' as Task['priority'], status: 'pending' as Task['status'] }
+const EMPTY_FORM = { title: '', description: '' }
 
 export default function TasksPage() {
-  const { theme } = useTheme()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [toggling, setToggling] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null)
-  const [moving, setMoving] = useState<string | null>(null)
 
   const load = () => {
     setLoading(true)
@@ -59,33 +35,18 @@ export default function TasksPage() {
 
   useEffect(() => { load() }, [])
 
-  const getColumn = (colKey: Task['status']) => tasks.filter((t) => t.status === colKey)
-  const ideas = tasks.filter((t) => t.status === 'idea')
+  const pending = tasks.filter((t) => !t.completed)
+  const done = tasks.filter((t) => t.completed)
 
-  const moveTask = async (task: Task, direction: 'forward' | 'back') => {
-    const idx = KANBAN_STATUS_ORDER.indexOf(task.status)
-    const newStatus = KANBAN_STATUS_ORDER[direction === 'forward' ? idx + 1 : idx - 1]
-    if (!newStatus) return
-    setMoving(task.id)
+  const handleToggle = async (task: Task) => {
+    setToggling(task.id)
     try {
-      const res = await tasksApi.update(task.id, { status: newStatus })
+      const res = await tasksApi.update(task.id, { completed: !task.completed })
       setTasks((prev) => prev.map((t) => t.id === task.id ? res.data : t))
     } catch (err) {
       console.error(err)
     } finally {
-      setMoving(null)
-    }
-  }
-
-  const promoteIdea = async (task: Task) => {
-    setMoving(task.id)
-    try {
-      const res = await tasksApi.update(task.id, { status: 'pending' })
-      setTasks((prev) => prev.map((t) => t.id === task.id ? res.data : t))
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setMoving(null)
+      setToggling(null)
     }
   }
 
@@ -93,8 +54,8 @@ export default function TasksPage() {
     e.preventDefault()
     setSaving(true)
     try {
-      const res = await tasksApi.create({ title: form.title, description: form.description || undefined, priority: form.priority, status: form.status })
-      setTasks((prev) => [...prev, res.data])
+      const res = await tasksApi.create({ title: form.title, description: form.description || undefined })
+      setTasks((prev) => [res.data, ...prev])
       setFormOpen(false)
       setForm(EMPTY_FORM)
     } catch (err: unknown) {
@@ -111,149 +72,139 @@ export default function TasksPage() {
     setDeleteTarget(null)
   }
 
-  // Column background classes — violet theme uses primary tints
-  const getColBg = (key: Task['status']) => {
-    if (theme === 'violet') {
-      const map: Record<string, string> = {
-        pending: 'bg-primary/5 border border-primary/10',
-        in_progress: 'bg-blue-950/20 border border-blue-500/10',
-        done: 'bg-emerald-950/20 border border-emerald-500/10',
-      }
-      return map[key] ?? 'bg-primary/5'
-    }
-    const map: Record<string, string> = {
-      pending: 'bg-yellow-50 dark:bg-yellow-950/30',
-      in_progress: 'bg-blue-50 dark:bg-blue-950/30',
-      done: 'bg-emerald-50 dark:bg-emerald-950/30',
-    }
-    return map[key] ?? 'bg-muted'
-  }
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
 
-  const priorityClasses = theme === 'violet' ? PRIORITY_COLORS_VIOLET : PRIORITY_COLORS
+  const endpointDocs = [
+    {
+      method: 'GET',
+      description: 'Listar todas las tareas',
+      example: `curl -H "Authorization: Bearer TOKEN" \\\n  ${baseUrl}/tasks`,
+    },
+    {
+      method: 'POST',
+      description: 'Crear una nueva tarea',
+      example: `curl -X POST -H "Authorization: Bearer TOKEN" \\\n  -H "Content-Type: application/json" \\\n  -d '{"title":"Mi tarea","description":"opcional"}' \\\n  ${baseUrl}/tasks`,
+    },
+    {
+      method: 'PUT',
+      description: 'Completar / descompletar',
+      example: `curl -X PUT -H "Authorization: Bearer TOKEN" \\\n  -H "Content-Type: application/json" \\\n  -d '{"completed":true}' \\\n  ${baseUrl}/tasks/ID`,
+    },
+    {
+      method: 'DELETE',
+      description: 'Eliminar una tarea',
+      example: `curl -X DELETE -H "Authorization: Bearer TOKEN" \\\n  ${baseUrl}/tasks/ID`,
+    },
+  ]
 
   return (
     <DashboardLayout title="Tareas">
       <div className="space-y-6">
+
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <ListChecks className="size-6" /> Tablero de Tareas
+              <ListChecks className="size-6 text-primary" />
+              Tareas
             </h1>
-            <p className="text-muted-foreground text-sm">{tasks.length} tareas en total</p>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              {pending.length} pendiente{pending.length !== 1 ? 's' : ''} · {done.length} completada{done.length !== 1 ? 's' : ''}
+            </p>
           </div>
           <Button size="sm" onClick={() => { setForm(EMPTY_FORM); setFormOpen(true) }}>
             <Plus className="size-4 mr-1" /> Nueva tarea
           </Button>
         </div>
 
-        {/* Kanban board — pending / in_progress / done */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {KANBAN_COLUMNS.map((col) => {
-            const colTasks = getColumn(col.key)
-            const colIdx = KANBAN_STATUS_ORDER.indexOf(col.key)
-            return (
-              <div key={col.key} className={cn('rounded-xl p-3 min-h-[180px]', getColBg(col.key))}>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold">{col.label}</h2>
-                  <Badge variant="secondary" className="text-xs">{colTasks.length}</Badge>
+        {/* Pending tasks */}
+        <div className="space-y-2">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pendientes</h2>
+          <div className="rounded-xl border border-border overflow-hidden divide-y divide-border">
+            {loading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-3">
+                  <Skeleton className="size-5 rounded" />
+                  <Skeleton className="h-4 flex-1 max-w-xs" />
                 </div>
-                <div className="space-y-2">
-                  {loading
-                    ? Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)
-                    : colTasks.length === 0
-                      ? <p className="text-xs text-muted-foreground text-center py-4">Sin tareas</p>
-                      : colTasks.map((task) => (
-                        <Card key={task.id} className={cn(
-                          'shadow-sm',
-                          theme === 'violet' ? 'bg-background/60 backdrop-blur-sm' : 'bg-background/80 backdrop-blur-sm'
-                        )}>
-                          <CardHeader className="p-3 pb-1">
-                            <div className="flex items-start justify-between gap-1">
-                              <CardTitle className="text-xs font-medium leading-snug">{task.title}</CardTitle>
-                              <Button variant="ghost" size="icon" className="size-5 shrink-0 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(task)}>
-                                <Trash2 className="size-3" />
-                              </Button>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-0 space-y-2">
-                            {task.description && <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>}
-                            {task.assignee && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <User2 className="size-3" />
-                                <span className="truncate">{task.assignee.name}</span>
-                              </div>
-                            )}
-                            <div className="flex items-center justify-between">
-                              <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium capitalize', priorityClasses[task.priority])}>
-                                {task.priority === 'low' ? 'Baja' : task.priority === 'medium' ? 'Media' : 'Alta'}
-                              </span>
-                              <div className="flex gap-0.5">
-                                {colIdx > 0 && (
-                                  <Button variant="ghost" size="icon" className="size-6" disabled={moving === task.id} onClick={() => moveTask(task, 'back')}>
-                                    <ChevronLeft className="size-3" />
-                                  </Button>
-                                )}
-                                {colIdx < KANBAN_STATUS_ORDER.length - 1 && (
-                                  <Button variant="ghost" size="icon" className="size-6" disabled={moving === task.id} onClick={() => moveTask(task, 'forward')}>
-                                    <ChevronRight className="size-3" />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                  }
-                </div>
+              ))
+            ) : pending.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <Check className="size-8 text-primary mb-2" />
+                <p className="text-sm font-medium">¡Todo completado!</p>
+                <p className="text-xs text-muted-foreground mt-0.5">No hay tareas pendientes.</p>
               </div>
-            )
-          })}
+            ) : (
+              pending.map((task) => (
+                <TaskRow key={task.id} task={task} toggling={toggling} onToggle={handleToggle} onDelete={setDeleteTarget} />
+              ))
+            )}
+          </div>
         </div>
 
-        {/* Ideas section */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Lightbulb className="size-5 text-yellow-500" />
-            <h2 className="text-base font-semibold">Ideas</h2>
-            <Badge variant="secondary" className="text-xs">{ideas.length}</Badge>
+        {/* Completed tasks */}
+        {done.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Completadas</h2>
+            <div className="rounded-xl border border-border overflow-hidden divide-y divide-border opacity-60">
+              {done.map((task) => (
+                <TaskRow key={task.id} task={task} toggling={toggling} onToggle={handleToggle} onDelete={setDeleteTarget} />
+              ))}
+            </div>
           </div>
-          <div className={cn('rounded-xl border p-3 min-h-[60px] space-y-2',
-            theme === 'violet' ? 'bg-primary/5 border-primary/10' : 'bg-muted/40'
-          )}>
-            {loading
-              ? Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)
-              : ideas.length === 0
-                ? <p className="text-xs text-muted-foreground text-center py-3">Sin ideas aún. ¡Agregá una!</p>
-                : ideas.map((task) => (
-                  <div key={task.id} className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2',
-                    theme === 'violet' ? 'bg-background/60 backdrop-blur-sm' : 'bg-background',
-                    'border border-border'
-                  )}>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{task.title}</p>
-                      {task.description && <p className="text-xs text-muted-foreground truncate">{task.description}</p>}
-                      {task.assignee && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                          <User2 className="size-3" />
-                          <span>{task.assignee.name}</span>
-                        </div>
+        )}
+
+        {/* API docs for AI / Telegram bot */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Bot className="size-5 text-primary" />
+              Integración con Agente IA / Telegram
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Endpoints REST para que tu bot agregue, complete o elimine tareas.
+              Todos requieren el header{' '}
+              <code className="bg-muted px-1 py-0.5 rounded text-primary font-mono text-[11px]">Authorization: Bearer TOKEN</code>.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {/* Login */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <Info className="size-3.5 text-primary" />
+                Paso 1 — Obtener token (login)
+              </div>
+              <pre className="text-[11px] text-foreground font-mono break-all whitespace-pre-wrap leading-relaxed">{`curl -X POST -H "Content-Type: application/json" \\\n  -d '{"email":"thiagozambonini24@gmail.com","password":"ThiagoZZZZ2003+"}' \\\n  ${baseUrl}/auth/login`}</pre>
+            </div>
+
+            {/* Endpoints grid */}
+            <div className="grid gap-2 sm:grid-cols-2">
+              {endpointDocs.map((doc, i) => (
+                <div key={i} className="rounded-lg border border-border bg-muted/20 p-3 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        'text-[10px] font-mono font-bold px-1.5',
+                        doc.method === 'GET' && 'text-emerald-400 border-emerald-800',
+                        doc.method === 'POST' && 'text-blue-400 border-blue-800',
+                        doc.method === 'PUT' && 'text-yellow-400 border-yellow-800',
+                        doc.method === 'DELETE' && 'text-red-400 border-red-800',
                       )}
-                    </div>
-                    <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 capitalize', priorityClasses[task.priority])}>
-                      {task.priority === 'low' ? 'Baja' : task.priority === 'medium' ? 'Media' : 'Alta'}
-                    </span>
-                    <Button variant="outline" size="sm" className="text-xs h-7 shrink-0" disabled={moving === task.id} onClick={() => promoteIdea(task)}>
-                      Promover
-                    </Button>
-                    <Button variant="ghost" size="icon" className="size-7 shrink-0 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(task)}>
-                      <Trash2 className="size-3.5" />
-                    </Button>
+                    >
+                      {doc.method}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">{doc.description}</span>
                   </div>
-                ))
-            }
-          </div>
-        </div>
+                  <div className="flex items-start gap-1.5 rounded bg-background/60 px-2 py-1.5">
+                    <Terminal className="size-3 shrink-0 text-muted-foreground mt-0.5" />
+                    <pre className="text-[10px] font-mono text-foreground break-all whitespace-pre-wrap leading-relaxed">{doc.example}</pre>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Create dialog */}
@@ -263,36 +214,11 @@ export default function TasksPage() {
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-1.5">
               <Label>Título</Label>
-              <Input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Nombre de la tarea" />
+              <Input required autoFocus value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="¿Qué hay que hacer?" />
             </div>
             <div className="space-y-1.5">
               <Label>Descripción (opcional)</Label>
-              <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descripción..." />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Prioridad</Label>
-                <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v as Task['priority'] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Baja</SelectItem>
-                    <SelectItem value="medium">Media</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Columna inicial</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as Task['status'] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="idea">Idea</SelectItem>
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="in_progress">En progreso</SelectItem>
-                    <SelectItem value="done">Hecho</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Detalles adicionales..." />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>Cancelar</Button>
@@ -302,11 +228,11 @@ export default function TasksPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirm delete */}
-      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+      {/* Delete confirm */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null) }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Eliminar tarea</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">¿Eliminar <strong>{deleteTarget?.title}</strong>?</p>
+          <p className="text-sm text-muted-foreground">¿Eliminar <strong className="text-foreground">"{deleteTarget?.title}"</strong>? Esta acción no se puede deshacer.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
@@ -316,3 +242,54 @@ export default function TasksPage() {
     </DashboardLayout>
   )
 }
+
+function TaskRow({
+  task,
+  toggling,
+  onToggle,
+  onDelete,
+}: {
+  task: Task
+  toggling: string | null
+  onToggle: (t: Task) => void
+  onDelete: (t: Task) => void
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-muted/20 transition-colors group">
+      <button
+        className={cn(
+          'flex size-5 shrink-0 items-center justify-center rounded border-2 transition-all duration-150',
+          task.completed
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-border hover:border-primary',
+          toggling === task.id && 'opacity-50 cursor-not-allowed',
+        )}
+        disabled={toggling === task.id}
+        onClick={() => onToggle(task)}
+        aria-label={task.completed ? 'Marcar pendiente' : 'Marcar completada'}
+      >
+        {task.completed && <Check className="size-3" strokeWidth={3} />}
+      </button>
+
+      <div className="min-w-0 flex-1">
+        <p className={cn('text-sm font-medium', task.completed && 'line-through text-muted-foreground')}>
+          {task.title}
+        </p>
+        {task.description && (
+          <p className="text-xs text-muted-foreground truncate mt-0.5">{task.description}</p>
+        )}
+      </div>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+        onClick={() => onDelete(task)}
+        aria-label="Eliminar"
+      >
+        <Trash2 className="size-3.5" />
+      </Button>
+    </div>
+  )
+}
+

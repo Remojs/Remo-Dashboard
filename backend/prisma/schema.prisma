@@ -1,4 +1,4 @@
-// Prisma Schema - Interaktive Admin Dashboard
+// Prisma Schema - RemoDashboard
 // Generator and datasource
 
 generator client {
@@ -21,10 +21,11 @@ model User {
   role       String    @default("user")      // "admin" | "user"
   createdAt  DateTime  @default(now()) @map("created_at")
 
-  emails       Email[]
-  tasks        Task[]    @relation("AssignedTasks")
-  createdTasks Task[]    @relation("CreatedTasks")
-  passwords    Password[]
+  emails          Email[]
+  tasks           Task[]
+  passwords       Password[]
+  passwordGroups  PasswordGroup[]
+  debts           Debt[]
 
   @@map("users")
 }
@@ -48,51 +49,52 @@ model Email {
 }
 
 // ─────────────────────────────────────────────
+// PASSWORD GROUPS
+// ─────────────────────────────────────────────
+model PasswordGroup {
+  id        String     @id @default(uuid())
+  name      String
+  userId    String     @map("user_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passwords Password[]
+
+  @@map("password_groups")
+}
+
+// ─────────────────────────────────────────────
 // PASSWORD MANAGER
 // ─────────────────────────────────────────────
 model Password {
-  id                String   @id @default(uuid())
+  id                String         @id @default(uuid())
   service           String
   username          String
-  passwordEncrypted String   @map("password_encrypted")
+  passwordEncrypted String         @map("password_encrypted")
   notes             String?
-  createdById       String   @map("created_by")
-  createdAt         DateTime @default(now()) @map("created_at")
+  groupId           String?        @map("group_id")
+  createdById       String         @map("created_by")
+  createdAt         DateTime       @default(now()) @map("created_at")
 
-  createdBy         User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  group             PasswordGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  createdBy         User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
   @@map("passwords")
 }
 
 // ─────────────────────────────────────────────
-// PROJECTS / SALES
-// ─────────────────────────────────────────────
-model Project {
-  id          String        @id @default(uuid())
-  clientName  String        @map("client_name")
-  type        String        // landing, ecommerce, bot, etc.
-  price       Float         @default(0)
-  status      String        @default("pending")     // "pending" | "in_progress" | "completed"
-  createdAt   DateTime      @default(now()) @map("created_at")
-
-  @@map("projects")
-}
-
-// ─────────────────────────────────────────────
-// TASKS / IDEAS (Kanban)
+// TASKS (Checklist — AI-agent friendly)
 // ─────────────────────────────────────────────
 model Task {
-  id          String     @id @default(uuid())
+  id          String   @id @default(uuid())
   title       String
   description String?
-  status      String     @default("idea")    // "idea" | "pending" | "in_progress" | "done"
-  assignedTo  String?    @map("assigned_to")
-  createdById String?    @map("created_by") // user who submitted this task
-  priority    String     @default("medium")  // "low" | "medium" | "high"
-  createdAt   DateTime   @default(now()) @map("created_at")
+  completed   Boolean  @default(false)
+  createdById String?  @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  assignee    User?      @relation("AssignedTasks", fields: [assignedTo], references: [id], onDelete: SetNull)
-  creator     User?      @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: SetNull)
+  creator     User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
   @@map("tasks")
 }
@@ -118,6 +120,7 @@ model Website {
   id        String          @id @default(uuid())
   name      String
   domain    String          @unique
+  type      String          @default("frontend")  // "frontend" | "backend"
   createdAt DateTime        @default(now()) @map("created_at")
 
   statuses  WebsiteStatus[]
@@ -138,4 +141,32 @@ model WebsiteStatus {
   website           Website       @relation(fields: [websiteId], references: [id], onDelete: Cascade)
 
   @@map("website_statuses")
+}
+
+// ─────────────────────────────────────────────
+// DEBT TRACKER
+// ─────────────────────────────────────────────
+model Debt {
+  id          String        @id @default(uuid())
+  name        String
+  totalAmount Float         @map("total_amount")
+  userId      String        @map("user_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments    DebtPayment[]
+
+  @@map("debts")
+}
+
+model DebtPayment {
+  id        String   @id @default(uuid())
+  debtId    String   @map("debt_id")
+  amount    Float
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  debt      Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
+
+  @@map("debt_payments")
 }

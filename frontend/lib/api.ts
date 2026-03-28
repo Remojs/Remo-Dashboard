@@ -110,33 +110,32 @@ export interface Email {
   user?: { id: string; name: string; email: string } | null
 }
 
+export interface PasswordGroup {
+  id: string
+  name: string
+  userId: string
+  createdAt: string
+  _count?: { passwords: number }
+}
+
 export interface PasswordRecord {
   id: string
   service: string
   username: string
   notes: string | null
+  groupId: string | null
   createdAt: string
   password?: string // only in decrypt endpoint
-}
-
-export interface Project {
-  id: string
-  clientName: string
-  type: string
-  price: string
-  status: 'pending' | 'in_progress' | 'completed'
-  createdAt: string
 }
 
 export interface Task {
   id: string
   title: string
   description: string | null
-  status: 'idea' | 'pending' | 'in_progress' | 'done'
-  assignedTo: string | null
-  priority: 'low' | 'medium' | 'high'
+  completed: boolean
+  createdById: string | null
   createdAt: string
-  assignee?: { id: string; name: string; email: string } | null
+  updatedAt: string
 }
 
 export interface Expense {
@@ -158,6 +157,7 @@ export interface Website {
   id: string
   name: string
   domain: string
+  type: 'frontend' | 'backend'
   createdAt: string
   statuses?: WebsiteStatus[]
 }
@@ -191,6 +191,23 @@ export interface AdminDashboardItem {
   color: string
   emoji: string
   createdAt: string
+}
+
+export interface DebtPayment {
+  id: string
+  debtId: string
+  amount: number
+  note: string | null
+  createdAt: string
+}
+
+export interface Debt {
+  id: string
+  name: string
+  totalAmount: number
+  userId: string
+  createdAt: string
+  payments: DebtPayment[]
 }
 
 // ── Auth module ───────────────────────────────────────────────────────────────
@@ -235,6 +252,21 @@ export const emailsApi = {
     request<ApiResponse<Email>>(`/emails/${id}/read`, { method: 'PUT' }),
 }
 
+// ── Password groups module ────────────────────────────────────────────────────
+export const passwordGroupsApi = {
+  getAll: () =>
+    request<ApiResponse<PasswordGroup[]>>('/password-groups'),
+
+  create: (data: { name: string }) =>
+    request<ApiResponse<PasswordGroup>>('/password-groups', { method: 'POST', body: data }),
+
+  update: (id: string, data: { name: string }) =>
+    request<ApiResponse<PasswordGroup>>(`/password-groups/${id}`, { method: 'PUT', body: data }),
+
+  remove: (id: string) =>
+    request<ApiResponse<null>>(`/password-groups/${id}`, { method: 'DELETE' }),
+}
+
 // ── Passwords module ──────────────────────────────────────────────────────────
 export const passwordsApi = {
   getAll: (params?: Record<string, string | number>) =>
@@ -243,32 +275,14 @@ export const passwordsApi = {
   decrypt: (id: string) =>
     request<ApiResponse<PasswordRecord & { password: string }>>(`/passwords/${id}/decrypt`),
 
-  create: (data: { service: string; username: string; password: string; notes?: string }) =>
+  create: (data: { service: string; username: string; password: string; notes?: string; groupId?: string }) =>
     request<ApiResponse<PasswordRecord>>('/passwords', { method: 'POST', body: data }),
 
-  update: (id: string, data: Partial<{ service: string; username: string; password: string; notes: string }>) =>
+  update: (id: string, data: Partial<{ service: string; username: string; password: string; notes: string; groupId: string | null }>) =>
     request<ApiResponse<PasswordRecord>>(`/passwords/${id}`, { method: 'PUT', body: data }),
 
   remove: (id: string) =>
     request<ApiResponse<null>>(`/passwords/${id}`, { method: 'DELETE' }),
-}
-
-// ── Projects module ───────────────────────────────────────────────────────────
-export const projectsApi = {
-  getAll: (params?: Record<string, string | number>) =>
-    request<PaginatedResponse<Project>>('/projects', { params }),
-
-  create: (data: { clientName: string; type: string; price: number; status?: string }) =>
-    request<ApiResponse<Project>>('/projects', { method: 'POST', body: data }),
-
-  update: (id: string, data: Partial<Project>) =>
-    request<ApiResponse<Project>>(`/projects/${id}`, { method: 'PUT', body: data }),
-
-  remove: (id: string) =>
-    request<ApiResponse<null>>(`/projects/${id}`, { method: 'DELETE' }),
-
-  getMonthlyRevenue: (year?: number) =>
-    request<ApiResponse<MonthlyExpenses>>('/projects/monthly-revenue', { params: year ? { year } : {} }),
 }
 
 // ── Tasks module ──────────────────────────────────────────────────────────────
@@ -276,10 +290,10 @@ export const tasksApi = {
   getAll: (params?: Record<string, string | number>) =>
     request<PaginatedResponse<Task>>('/tasks', { params }),
 
-  create: (data: { title: string; description?: string; status?: string; assignedTo?: string; priority?: string }) =>
+  create: (data: { title: string; description?: string }) =>
     request<ApiResponse<Task>>('/tasks', { method: 'POST', body: data }),
 
-  update: (id: string, data: Partial<Task>) =>
+  update: (id: string, data: Partial<{ title: string; description: string | null; completed: boolean }>) =>
     request<ApiResponse<Task>>(`/tasks/${id}`, { method: 'PUT', body: data }),
 
   remove: (id: string) =>
@@ -306,10 +320,10 @@ export const websitesApi = {
   getAll: (params?: Record<string, string | number>) =>
     request<PaginatedResponse<Website>>('/websites', { params }),
 
-  create: (data: { name: string; domain: string }) =>
+  create: (data: { name: string; domain: string; type: 'frontend' | 'backend' }) =>
     request<ApiResponse<Website>>('/websites', { method: 'POST', body: data }),
 
-  update: (id: string, data: { name?: string; domain?: string }) =>
+  update: (id: string, data: { name?: string; domain?: string; type?: 'frontend' | 'backend' }) =>
     request<ApiResponse<Website>>(`/websites/${id}`, { method: 'PATCH', body: data }),
 
   remove: (id: string) =>
@@ -344,4 +358,24 @@ export const adminDashboardsApi = {
 
   remove: (id: string) =>
     request<ApiResponse<null>>(`/admin-dashboards/${id}`, { method: 'DELETE' }),
+}
+// ── Debts module ─────────────────────────────────────────────────
+export const debtsApi = {
+  getAll: () =>
+    request<ApiResponse<Debt[]>>('/debts'),
+
+  create: (data: { name: string; totalAmount: number }) =>
+    request<ApiResponse<Debt>>('/debts', { method: 'POST', body: data }),
+
+  update: (id: string, data: { name?: string; totalAmount?: number }) =>
+    request<ApiResponse<Debt>>(`/debts/${id}`, { method: 'PUT', body: data }),
+
+  remove: (id: string) =>
+    request<ApiResponse<null>>(`/debts/${id}`, { method: 'DELETE' }),
+
+  addPayment: (debtId: string, data: { amount: number; note?: string }) =>
+    request<ApiResponse<DebtPayment>>(`/debts/${debtId}/payments`, { method: 'POST', body: data }),
+
+  deletePayment: (debtId: string, paymentId: string) =>
+    request<ApiResponse<null>>(`/debts/${debtId}/payments/${paymentId}`, { method: 'DELETE' }),
 }

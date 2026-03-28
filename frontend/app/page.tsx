@@ -1,97 +1,70 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Users, FolderKanban, ListTodo, DollarSign, CheckCircle2 } from 'lucide-react'
+import { ListChecks, DollarSign, Activity, CheckCircle2 } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
-import { ProjectsOverview } from '@/components/dashboard/projects-overview'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
-import { IncomeChart } from '@/components/dashboard/income-chart'
-import { projectsApi, tasksApi, expensesApi, type Project, type Task, type MonthlyExpenses } from '@/lib/api'
+import { ActivityFeed } from '@/components/dashboard/activity-feed'
+import { tasksApi, expensesApi, type Task, type MonthlyExpenses } from '@/lib/api'
 import { useAuth } from '@/contexts/auth-context'
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const [projects, setProjects] = useState<Project[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
   const [monthly, setMonthly] = useState<MonthlyExpenses | null>(null)
-  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyExpenses | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.allSettled([
-      projectsApi.getAll({ limit: 100 }),
       tasksApi.getAll({ limit: 50 }),
       expensesApi.getMonthly(),
-      projectsApi.getMonthlyRevenue(),
     ])
-      .then(([p, t, e, r]) => {
-        if (p.status === 'fulfilled') setProjects(p.value.data)
+      .then(([t, e]) => {
         if (t.status === 'fulfilled') setTasks(t.value.data)
         if (e.status === 'fulfilled') setMonthly(e.value.data)
-        if (r.status === 'fulfilled') setMonthlyRevenue(r.value.data)
       })
       .finally(() => setLoading(false))
   }, [])
 
-  const activeProjects = projects.filter((p) => p.status === 'in_progress').length
-  const completedProjects = projects.filter((p) => p.status === 'completed').length
-  const totalProjects = projects.length
-  const pendingTasks = tasks.filter((t) => t.status === 'pending' || t.status === 'in_progress').length
-  const doneTasks = tasks.filter((t) => t.status === 'done').length
-  const totalRevenue = projects
-    .filter((p) => p.status === 'completed')
-    .reduce((acc, p) => acc + parseFloat(p.price), 0)
-
-  const pendingRevenue = projects
-    .filter((p) => p.status === 'in_progress')
-    .reduce((acc, p) => acc + parseFloat(p.price), 0)
-
-  const activeProjectsList = projects.filter((p) => p.status === 'in_progress').slice(0, 5)
+  const pendingTasks = tasks.filter((t) => !t.completed).length
+  const doneTasks = tasks.filter((t) => t.completed).length
+  const totalTasks = tasks.length
+  const totalExpenses = monthly?.grandTotal ?? 0
 
   const stats = [
     {
-      title: 'Total Proyectos',
-      value: loading ? '...' : String(totalProjects),
-      change: `${activeProjects} activos`,
-      changeType: 'positive' as const,
-      icon: Users,
-      description: 'registrados',
+      title: 'Tareas Totales',
+      value: loading ? '...' : String(totalTasks),
+      change: `${pendingTasks} pendientes`,
+      changeType: 'neutral' as const,
+      icon: ListChecks,
+      description: 'registradas',
     },
     {
-      title: 'Proyectos Activos',
-      value: loading ? '...' : String(activeProjects),
-      change: `de ${totalProjects} totales`,
-      changeType: 'positive' as const,
-      icon: FolderKanban,
-      description: 'en progreso',
-    },
-    {
-      title: 'Proyectos Terminados',
-      value: loading ? '...' : String(completedProjects),
-      change: completedProjects > 0 ? `$${totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })} generados` : 'sin ingresos aún',
-      changeType: completedProjects > 0 ? 'positive' as const : 'neutral' as const,
+      title: 'Completadas',
+      value: loading ? '...' : String(doneTasks),
+      change: totalTasks > 0 ? `${Math.round((doneTasks / totalTasks) * 100)}% del total` : '—',
+      changeType: doneTasks > 0 ? 'positive' as const : 'neutral' as const,
       icon: CheckCircle2,
-      description: 'completados',
+      description: 'listas',
     },
     {
-      title: 'Tareas',
+      title: 'Pendientes',
       value: loading ? '...' : String(pendingTasks),
-      change: `${doneTasks} completadas`,
-      changeType: doneTasks > pendingTasks ? 'positive' : 'neutral' as const,
-      icon: ListTodo,
-      description: 'pendientes',
+      change: pendingTasks === 0 ? '¡Todo al día!' : `${pendingTasks} por hacer`,
+      changeType: pendingTasks === 0 ? 'positive' as const : 'neutral' as const,
+      icon: Activity,
+      description: 'sin completar',
     },
     {
-      title: 'Ingresos',
-      value: loading ? '...' : `$${totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
-      change: pendingRevenue > 0
-        ? `$${pendingRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })} pendientes`
-        : 'sin proyectos en curso',
-      changeType: 'positive' as const,
+      title: 'Gastos del año',
+      value: loading ? '...' : `$${totalExpenses.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`,
+      change: 'acumulado',
+      changeType: 'neutral' as const,
       icon: DollarSign,
-      description: 'cobrado (completados)',
+      description: 'total año',
     },
   ]
 
@@ -100,32 +73,29 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight">
-            Bienvenido de vuelta{user ? `, ${user.name}` : ''}
+            Bienvenido{user ? `, ${user.name}` : ''}
           </h1>
-          <p className="text-muted-foreground">
-            Aquí tienes un resumen de lo que está pasando con tu agencia.
+          <p className="text-muted-foreground text-sm">
+            Resumen de tu panel personal.
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => (
             <StatsCard key={stat.title} {...stat} />
           ))}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <IncomeChart monthlyData={monthlyRevenue} />
-          <RevenueChart monthlyData={monthly} />
-        </div>
-
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <ProjectsOverview projects={activeProjectsList} loading={loading} />
+            <RevenueChart monthlyData={monthly} />
           </div>
           <div className="space-y-6">
-            <QuickActions />
+            <ActivityFeed tasks={tasks.slice(0, 8)} loading={loading} />
           </div>
         </div>
+
+        <QuickActions />
       </div>
     </DashboardLayout>
   )

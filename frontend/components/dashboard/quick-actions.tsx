@@ -1,41 +1,22 @@
 'use client'
 
-import { useTheme } from 'next-themes'
-import { Plus, FileText, Users, CreditCard, Zap } from 'lucide-react'
+import { CheckSquare, KeyRound, Globe, DollarSign, Zap } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 
 const actions = [
-  {
-    label: 'Nuevo Proyecto',
-    icon: Plus,
-    variant: 'default' as const,
-  },
-  {
-    label: 'Crear Tarea',
-    icon: FileText,
-    variant: 'outline' as const,
-  },
-  {
-    label: 'Agregar Lead',
-    icon: Users,
-    variant: 'outline' as const,
-  },
-  {
-    label: 'Registrar Pago',
-    icon: CreditCard,
-    variant: 'outline' as const,
-  },
+  { label: 'Nueva Tarea', icon: CheckSquare, href: '/tasks', variant: 'default' as const },
+  { label: 'Contraseñas', icon: KeyRound, href: '/passwords', variant: 'outline' as const },
+  { label: 'Web Vitals', icon: Globe, href: '/vitals', variant: 'outline' as const },
+  { label: 'Gastos', icon: DollarSign, href: '/expenses', variant: 'outline' as const },
 ]
 
 export function QuickActions() {
-  const { theme } = useTheme()
+  const router = useRouter()
 
   return (
-    <Card className={cn(
-      theme === 'violet' && "glass-card border-primary/20"
-    )}>
+    <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <Zap className="size-4 text-primary" />
@@ -48,11 +29,8 @@ export function QuickActions() {
             <Button
               key={action.label}
               variant={action.variant}
-              className={cn(
-                "h-auto flex-col gap-2 py-4 transition-all duration-200",
-                action.variant === 'default' && theme === 'violet' && "bg-primary hover:bg-primary/90 glow-effect",
-                action.variant === 'outline' && theme === 'violet' && "border-primary/30 hover:border-primary/60 hover:bg-primary/10"
-              )}
+              className="h-auto flex-col gap-2 py-4 transition-all duration-200"
+              onClick={() => router.push(action.href)}
             >
               <action.icon className="size-5" />
               <span className="text-xs">{action.label}</span>
