@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { KeyRound, Plus, Eye, EyeOff, Trash2, Copy, Check, FolderPlus, Folder, FolderOpen, Pencil, X } from 'lucide-react'
+import { KeyRound, Plus, Eye, EyeOff, Trash2, Copy, Check, FolderPlus, Folder, FolderOpen, Pencil, X, Lock, Unlock, ShieldCheck } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +15,15 @@ import { passwordsApi, passwordGroupsApi, type PasswordRecord, type PasswordGrou
 import { cn } from '@/lib/utils'
 
 const EMPTY_FORM = { service: '', username: '', password: '', notes: '', groupId: '' }
+
+const VAULT_HASH_KEY = 'remo_vault_hash'
+
+async function hashKey(key: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(key + '||remo-vault-v1')
+  const buf = await crypto.subtle.digest('SHA-256', data)
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
+}
 
 export default function PasswordsPage() {
   const [records, setRecords] = useState<PasswordRecord[]>([])
@@ -32,6 +41,13 @@ export default function PasswordsPage() {
   const [savingGroup, setSavingGroup] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null)
+  const [vaultUnlocked, setVaultUnlocked] = useState(false)
+  const [unlockOpen, setUnlockOpen] = useState(false)
+  const [unlockInput, setUnlockInput] = useState('')
+  const [unlockError, setUnlockError] = useState('')
+  const [unlocking, setUnlocking] = useState(false)
+  const [pendingRevealId, setPendingRevealId] = useState<string | null>(null)
+  const isFirstSetup = typeof window !== 'undefined' && !localStorage.getItem(VAULT_HASH_KEY)
 
   const load = async () => {
     setLoading(true)
@@ -57,13 +73,56 @@ export default function PasswordsPage() {
       ? records.filter((r) => !r.groupId)
       : records.filter((r) => r.groupId === selectedGroup)
 
+  const doReveal = async (id: string) => {
+    const res = await passwordsApi.decrypt(id)
+    setRevealed((prev) => ({ ...prev, [id]: res.data.password! }))
+  }
+
   const handleReveal = async (id: string) => {
     if (revealed[id]) {
       setRevealed((prev) => { const n = { ...prev }; delete n[id]; return n })
       return
     }
-    const res = await passwordsApi.decrypt(id)
-    setRevealed((prev) => ({ ...prev, [id]: res.data.password! }))
+    if (!vaultUnlocked) {
+      setPendingRevealId(id)
+      setUnlockOpen(true)
+      return
+    }
+    await doReveal(id)
+  }
+
+  const handleUnlock = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!unlockInput.trim()) return
+    setUnlocking(true)
+    setUnlockError('')
+    try {
+      const hash = await hashKey(unlockInput)
+      const stored = localStorage.getItem(VAULT_HASH_KEY)
+      if (!stored) {
+        localStorage.setItem(VAULT_HASH_KEY, hash)
+      } else if (hash !== stored) {
+        setUnlockError('Clave incorrecta. Intentá de nuevo.')
+        setUnlocking(false)
+        return
+      }
+      setVaultUnlocked(true)
+      setUnlockOpen(false)
+      setUnlockInput('')
+      if (pendingRevealId) {
+        await doReveal(pendingRevealId)
+        setPendingRevealId(null)
+      }
+    } catch {
+      setUnlockError('Error al verificar la clave.')
+    } finally {
+      setUnlocking(false)
+    }
+  }
+
+  const handleLock = () => {
+    setVaultUnlocked(false)
+    setRevealed({})
   }
 
   const handleCopy = async (text: string, id: string) => {
@@ -223,9 +282,20 @@ export default function PasswordsPage() {
                 {selectedGroup === '__ungrouped__' && ' · Sin grupo'}
               </p>
             </div>
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="size-4 mr-1" /> Nueva
-            </Button>
+            <div className="flex items-center gap-2">
+              {vaultUnlocked ? (
+                <Button variant="outline" size="sm" onClick={handleLock} className="text-emerald-500 border-emerald-500/30 hover:text-emerald-400">
+                  <ShieldCheck className="size-4 mr-1" /> Bóveda abierta
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => setUnlockOpen(true)}>
+                  <Lock className="size-4 mr-1" /> Desbloquear
+                </Button>
+              )}
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="size-4 mr-1" /> Nueva
+              </Button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto rounded-xl border border-border divide-y divide-border">
@@ -350,6 +420,43 @@ export default function PasswordsPage() {
             <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={() => deleteId && handleDelete(deleteId)}>Eliminar</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Vault unlock dialog */}
+      <Dialog open={unlockOpen} onOpenChange={(o) => { if (!o) { setUnlockOpen(false); setUnlockInput(''); setUnlockError(''); setPendingRevealId(null) } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="size-5 text-primary" />
+              {isFirstSetup ? 'Configurar clave de bóveda' : 'Desbloquear bóveda'}
+            </DialogTitle>
+          </DialogHeader>
+          {isFirstSetup && (
+            <p className="text-sm text-muted-foreground">
+              Primera vez: ingresá tu <code className="font-mono bg-muted px-1 rounded">ENCRYPTION_KEY</code> del servidor. Se guardará un hash local para verificaciones futuras.
+            </p>
+          )}
+          <form onSubmit={handleUnlock} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Clave de cifrado</Label>
+              <Input
+                type="password"
+                autoFocus
+                placeholder="Tu ENCRYPTION_KEY del servidor"
+                value={unlockInput}
+                onChange={(e) => { setUnlockInput(e.target.value); setUnlockError('') }}
+              />
+              {unlockError && <p className="text-xs text-destructive">{unlockError}</p>}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setUnlockOpen(false); setUnlockInput(''); setUnlockError(''); setPendingRevealId(null) }}>Cancelar</Button>
+              <Button type="submit" disabled={unlocking || !unlockInput.trim()}>
+                <Unlock className="size-4 mr-1" />
+                {unlocking ? 'Verificando...' : isFirstSetup ? 'Guardar y abrir' : 'Desbloquear'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
