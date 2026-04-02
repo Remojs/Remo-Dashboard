@@ -34,22 +34,29 @@ export default function VitalsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Website | null>(null)
   const [editTarget, setEditTarget] = useState<Website | null>(null)
   const [editForm, setEditForm] = useState(EMPTY_FORM)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
-  const load = () => {
+  const PAGE_SIZE = 15
+
+  const load = (p = page) => {
     setLoading(true)
-    websitesApi.getAll()
-      .then((r) => setWebsites(r.data))
+    websitesApi.getAll({ page: p, limit: PAGE_SIZE })
+      .then((r) => {
+        setWebsites(r.data)
+        setTotalPages(r.meta.totalPages)
+      })
       .catch(console.error)
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(page) }, [page])
 
   const handleCheckAll = async () => {
     setChecking(true)
     try {
       await websitesApi.checkAll()
-      load()
+      load(page)
     } catch (err) {
       console.error(err)
     } finally {
@@ -61,10 +68,10 @@ export default function VitalsPage() {
     e.preventDefault()
     setSaving(true)
     try {
-      const res = await websitesApi.create(form)
-      setWebsites((prev) => [...prev, res.data])
+      await websitesApi.create(form)
       setAddOpen(false)
       setForm(EMPTY_FORM)
+      load(page)
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Error')
     } finally {
@@ -74,8 +81,8 @@ export default function VitalsPage() {
 
   const handleDelete = async () => {
     await websitesApi.remove(deleteTarget.id).catch(console.error)
-    setWebsites((prev) => prev.filter((w) => w.id !== deleteTarget.id))
     setDeleteTarget(null)
+    load(page)
   }
 
   const openEdit = (site: Website) => {
@@ -195,6 +202,18 @@ export default function VitalsPage() {
             </Table>
           </CardContent>
         </Card>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+              Anterior
+            </Button>
+            <span className="text-sm text-muted-foreground">Página {page} de {totalPages}</span>
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+              Siguiente
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Add dialog */}
