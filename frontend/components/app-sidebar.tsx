@@ -15,6 +15,7 @@ import {
   PanelsTopLeft,
   ListChecks,
   CreditCard,
+  TrendingUp,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -44,6 +45,7 @@ const navigationItems = [
   { title: 'Passwords', icon: KeyRound, href: '/passwords' },
   { title: 'Tareas', icon: ListChecks, href: '/tasks' },
   { title: 'Expenses', icon: DollarSign, href: '/expenses' },
+  { title: 'Ingresos', icon: TrendingUp, href: '/income' },
   { title: 'Tracker Deuda', icon: CreditCard, href: '/debt' },
   { title: 'Web Vitals', icon: Activity, href: '/vitals' },
   { title: 'Herramientas', icon: Wrench, href: '/herramientas' },

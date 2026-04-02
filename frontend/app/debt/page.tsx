@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CreditCard, Plus, Trash2, Pencil, ChevronDown, ChevronUp } from 'lucide-react'
+import { CreditCard, Plus, Trash2, Pencil, ChevronDown, ChevronUp, DollarSign } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,8 +11,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { debtsApi, type Debt } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
-function fmt(n: number) {
-  return n.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 })
+const RATE_KEY = 'debt-usd-rate'
+
+function fmtARS(usd: number, rate: number) {
+  return (usd * rate).toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 })
+}
+
+function fmtUSD(n: number) {
+  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 }
 
 function paidOf(debt: Debt) {
@@ -29,6 +35,26 @@ export default function DebtPage() {
   const [debts, setDebts] = useState<Debt[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
+
+  // USD/ARS exchange rate
+  const [usdRate, setUsdRate] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1200
+    const saved = localStorage.getItem(RATE_KEY)
+    return saved ? parseFloat(saved) : 1200
+  })
+  const [rateInput, setRateInput] = useState<string>(String(
+    typeof window !== 'undefined' ? (localStorage.getItem(RATE_KEY) ?? '1200') : '1200'
+  ))
+
+  useEffect(() => {
+    localStorage.setItem(RATE_KEY, String(usdRate))
+  }, [usdRate])
+
+  const handleRateChange = (val: string) => {
+    setRateInput(val)
+    const parsed = parseFloat(val)
+    if (!isNaN(parsed) && parsed > 0) setUsdRate(parsed)
+  }
 
   // Add debt dialog
   const [addOpen, setAddOpen] = useState(false)
@@ -136,13 +162,36 @@ export default function DebtPage() {
               <CreditCard className="size-6" /> Tracker de Deuda
             </h1>
             <p className="text-muted-foreground text-sm">
-              {debts.length} deuda{debts.length !== 1 ? 's' : ''} · {fmt(totalPaid)} pagado de {fmt(totalDebt)}
+              {debts.length} deuda{debts.length !== 1 ? 's' : ''} · {fmtUSD(totalPaid)} pagado de {fmtUSD(totalDebt)}
             </p>
           </div>
           <Button onClick={() => setAddOpen(true)}>
             <Plus className="size-4 mr-1" /> Nueva deuda
           </Button>
         </div>
+
+        {/* Exchange rate */}
+        <Card>
+          <CardContent className="flex items-center gap-4 py-3">
+            <DollarSign className="size-4 text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-2 flex-1">
+              <Label className="text-sm shrink-0 text-muted-foreground">Tipo de cambio USD →</Label>
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                className="w-32 h-8 text-sm"
+                value={rateInput}
+                onChange={(e) => handleRateChange(e.target.value)}
+                placeholder="1200"
+              />
+              <span className="text-sm text-muted-foreground">ARS/USD</span>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              Total deuda: <strong className="text-foreground">{fmtARS(totalDebt, usdRate)}</strong>
+            </span>
+          </CardContent>
+        </Card>
 
         {/* Global progress */}
         {debts.length > 0 && (
@@ -153,7 +202,7 @@ export default function DebtPage() {
             <CardContent>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-2xl font-bold">{globalPct}%</span>
-                <span className="text-sm text-muted-foreground">{fmt(totalDebt - totalPaid)} restante</span>
+                <span className="text-sm text-muted-foreground">{fmtARS(totalDebt - totalPaid, usdRate)} restante</span>
               </div>
               <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
                 <div
@@ -194,9 +243,9 @@ export default function DebtPage() {
                           <span className="text-xs text-muted-foreground shrink-0">{p}%</span>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                          <span>Total: <strong className="text-foreground">{fmt(debt.totalAmount)}</strong></span>
-                          <span>Pagado: <strong className="text-emerald-400">{fmt(paid)}</strong></span>
-                          <span>Restante: <strong className="text-primary">{fmt(remaining)}</strong></span>
+                          <span>Total: <strong className="text-foreground">{fmtUSD(debt.totalAmount)}</strong> <span className="text-xs">({fmtARS(debt.totalAmount, usdRate)})</span></span>
+                          <span>Pagado: <strong className="text-emerald-400">{fmtARS(paid, usdRate)}</strong></span>
+                          <span>Restante: <strong className="text-primary">{fmtARS(remaining, usdRate)}</strong></span>
                         </div>
                         <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
                           <div
@@ -237,7 +286,8 @@ export default function DebtPage() {
                             {debt.payments.map((payment) => (
                               <div key={payment.id} className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2">
                                 <div>
-                                  <span className="text-sm font-medium text-emerald-400">{fmt(payment.amount)}</span>
+                                  <span className="text-sm font-medium text-emerald-400">{fmtARS(payment.amount, usdRate)}</span>
+                                  <span className="text-xs text-muted-foreground ml-1">({fmtUSD(payment.amount)})</span>
                                   {payment.note && <span className="text-xs text-muted-foreground ml-2">{payment.note}</span>}
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -275,8 +325,11 @@ export default function DebtPage() {
               <Input required value={addForm.name} onChange={(e) => setAddForm({ ...addForm, name: e.target.value })} placeholder="Ej: Cuotas celular" />
             </div>
             <div className="space-y-1.5">
-              <Label>Monto total</Label>
+              <Label>Monto total (USD)</Label>
               <Input required type="number" min="0" step="0.01" value={addForm.totalAmount} onChange={(e) => setAddForm({ ...addForm, totalAmount: e.target.value })} placeholder="0.00" />
+              {addForm.totalAmount && !isNaN(parseFloat(addForm.totalAmount)) && (
+                <p className="text-xs text-muted-foreground">≈ {fmtARS(parseFloat(addForm.totalAmount), usdRate)}</p>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>Cancelar</Button>
@@ -296,8 +349,12 @@ export default function DebtPage() {
               <Input required value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label>Monto total</Label>
+              <Label>Monto total (USD)</Label>
               <Input required type="number" min="0" step="0.01" value={editForm.totalAmount} onChange={(e) => setEditForm({ ...editForm, totalAmount: e.target.value })} />
+              {editForm.totalAmount && !isNaN(parseFloat(editForm.totalAmount)) && (
+                <p className="text-xs text-muted-foreground">≈ {fmtARS(parseFloat(editForm.totalAmount), usdRate)}</p>
+              )}
+            </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
@@ -325,8 +382,11 @@ export default function DebtPage() {
           <DialogHeader><DialogTitle>Registrar pago — {payDebt?.name}</DialogTitle></DialogHeader>
           <form onSubmit={handlePayment} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Monto pagado</Label>
+              <Label>Monto pagado (USD)</Label>
               <Input required type="number" min="0.01" step="0.01" value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} placeholder="0.00" />
+              {payForm.amount && !isNaN(parseFloat(payForm.amount)) && (
+                <p className="text-xs text-muted-foreground">≈ {fmtARS(parseFloat(payForm.amount), usdRate)}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Nota (opcional)</Label>

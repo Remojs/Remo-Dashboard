@@ -11,6 +11,7 @@ const websiteRoutes = require('./websiteRoutes');
 const toolRoutes = require('./toolRoutes');
 const adminDashboardRoutes = require('./adminDashboardRoutes');
 const debtRoutes = require('./debtRoutes');
+const incomeRoutes = require('./incomeRoutes');
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/websites', websiteRoutes);
 router.use('/tools', toolRoutes);
 router.use('/admin-dashboards', adminDashboardRoutes);
 router.use('/debts', debtRoutes);
+router.use('/incomes', incomeRoutes);
 
 module.exports = router;
 

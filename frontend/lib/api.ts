@@ -153,6 +153,21 @@ export interface MonthlyExpenses {
   monthly: Array<{ month: number; monthName: string; total: number }>
 }
 
+export interface Income {
+  id: string
+  description: string
+  amount: number
+  source: string
+  date: string
+  createdAt: string
+}
+
+export interface MonthlyIncomes {
+  year: number
+  grandTotal: number
+  monthly: Array<{ month: number; monthName: string; total: number }>
+}
+
 export interface Website {
   id: string
   name: string
@@ -378,4 +393,19 @@ export const debtsApi = {
 
   deletePayment: (debtId: string, paymentId: string) =>
     request<ApiResponse<null>>(`/debts/${debtId}/payments/${paymentId}`, { method: 'DELETE' }),
+}
+
+// ── Income module ─────────────────────────────────────────────────
+export const incomeApi = {
+  getAll: (params?: Record<string, string | number>) =>
+    request<PaginatedResponse<Income>>('/incomes', { params }),
+
+  getMonthly: (year?: number) =>
+    request<ApiResponse<MonthlyIncomes>>('/incomes/monthly', { params: year ? { year } : {} }),
+
+  create: (data: { description: string; amount: number; source: string; date?: string }) =>
+    request<ApiResponse<Income>>('/incomes', { method: 'POST', body: data }),
+
+  remove: (id: string) =>
+    request<ApiResponse<null>>(`/incomes/${id}`, { method: 'DELETE' }),
 }

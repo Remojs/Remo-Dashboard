@@ -170,3 +170,17 @@ model DebtPayment {
 
   @@map("debt_payments")
 }
+
+// ─────────────────────────────────────────────
+// INCOME TRACKER
+// ─────────────────────────────────────────────
+model Income {
+  id          String   @id @default(uuid())
+  description String
+  amount      Float
+  source      String   // "freelance" | "salary" | "investment" | "sale" | "other"
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("incomes")
+}
