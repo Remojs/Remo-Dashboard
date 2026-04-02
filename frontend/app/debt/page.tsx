@@ -355,7 +355,6 @@ export default function DebtPage() {
                 <p className="text-xs text-muted-foreground">≈ {fmtARS(parseFloat(editForm.totalAmount), usdRate)}</p>
               )}
             </div>
-            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
               <Button type="submit" disabled={editSaving}>{editSaving ? 'Guardando...' : 'Guardar'}</Button>
