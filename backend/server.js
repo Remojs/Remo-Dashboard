@@ -1,5 +1,9 @@
 require('dotenv').config();
 
+// Validate required environment variables early — crashes with a clear message
+// instead of silently failing on the first DB/crypto call.
+require('./src/config/env');
+
 const app = require('./src/app');
 const { startMonitoringJob } = require('./src/jobs/monitoringJob');
 

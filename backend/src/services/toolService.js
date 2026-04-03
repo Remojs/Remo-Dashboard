@@ -3,7 +3,8 @@ const { randomUUID } = require('crypto');
 const { parsePagination, buildMeta } = require('../utils/pagination');
 const { readCollection, writeCollection } = require('./jsonStore');
 
-const TOOLS_FILE = path.join(__dirname, '..', 'data', 'tools.json');
+// Two levels up from src/services → project root → data/  (resolves to /app/data in Docker = the SQLite volume)
+const TOOLS_FILE = path.join(__dirname, '..', '..', 'data', 'tools.json');
 
 const getAll = async (query) => {
   const { skip, take, page, limit } = parsePagination(query);
