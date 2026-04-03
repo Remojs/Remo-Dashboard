@@ -409,3 +409,63 @@ export const incomeApi = {
   remove: (id: string) =>
     request<ApiResponse<null>>(`/incomes/${id}`, { method: 'DELETE' }),
 }
+
+// ── Job Search types ──────────────────────────────────────────────────────────
+export interface JobBoard {
+  id: string
+  name: string
+  url: string
+  description: string | null
+  color: string
+  emoji: string
+  createdAt: string
+}
+
+export type ApplicationStatus = 'applied' | 'interview' | 'technical' | 'offer' | 'rejected' | 'accepted'
+
+export interface JobApplication {
+  id: string
+  company: string
+  position: string
+  url: string | null
+  status: ApplicationStatus
+  date: string
+  notes: string | null
+  salary: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+// ── Job Search module ─────────────────────────────────────────────────────────
+export const jobSearchApi = {
+  // boards
+  getBoards: () =>
+    request<ApiResponse<JobBoard[]>>('/job-search/boards'),
+
+  createBoard: (data: { name: string; url: string; description?: string; color?: string; emoji?: string }) =>
+    request<ApiResponse<JobBoard>>('/job-search/boards', { method: 'POST', body: data }),
+
+  removeBoard: (id: string) =>
+    request<ApiResponse<null>>(`/job-search/boards/${id}`, { method: 'DELETE' }),
+
+  // applications
+  getApplications: () =>
+    request<ApiResponse<JobApplication[]>>('/job-search/applications'),
+
+  createApplication: (data: {
+    company: string
+    position: string
+    url?: string
+    status?: ApplicationStatus
+    date?: string
+    notes?: string
+    salary?: string
+  }) =>
+    request<ApiResponse<JobApplication>>('/job-search/applications', { method: 'POST', body: data }),
+
+  updateApplication: (id: string, data: Partial<Omit<JobApplication, 'id' | 'createdAt' | 'updatedAt'>>) =>
+    request<ApiResponse<JobApplication>>(`/job-search/applications/${id}`, { method: 'PUT', body: data }),
+
+  removeApplication: (id: string) =>
+    request<ApiResponse<null>>(`/job-search/applications/${id}`, { method: 'DELETE' }),
+}

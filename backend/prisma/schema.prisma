@@ -184,3 +184,33 @@ model Income {
 
   @@map("incomes")
 }
+
+// ─────────────────────────────────────────────
+// JOB SEARCH
+// ─────────────────────────────────────────────
+model JobBoard {
+  id          String   @id @default(uuid())
+  name        String
+  url         String
+  description String?
+  color       String   @default("violet")
+  emoji       String   @default("💼")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("job_boards")
+}
+
+model JobApplication {
+  id        String   @id @default(uuid())
+  company   String
+  position  String
+  url       String?
+  status    String   @default("applied")  // "applied" | "interview" | "technical" | "offer" | "rejected" | "accepted"
+  date      DateTime @default(now())
+  notes     String?
+  salary    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("job_applications")
+}

@@ -16,6 +16,7 @@ import {
   ListChecks,
   CreditCard,
   TrendingUp,
+  Briefcase,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -50,6 +51,7 @@ const navigationItems = [
   { title: 'Web Vitals', icon: Activity, href: '/vitals' },
   { title: 'Herramientas', icon: Wrench, href: '/herramientas' },
   { title: 'Admin Dashboards', icon: PanelsTopLeft, href: '/admin-dashboards' },
+  { title: 'Búsqueda Laboral', icon: Briefcase, href: '/busqueda-laboral' },
 ]
 
 export function AppSidebar() {
